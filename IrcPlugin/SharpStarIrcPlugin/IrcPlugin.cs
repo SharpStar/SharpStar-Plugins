@@ -2,12 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Meebey.SmartIrc4net;
 using Mono.Addins;
+using SharpStar.Lib;
+using SharpStar.Lib.Database;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
+using SharpStarIrcPlugin.Commands;
+using SharpStarIrcPlugin.QueryCommands;
 
 [assembly: Addin]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -22,15 +27,36 @@ namespace SharpStarIrcPlugin
 
         private volatile bool _running;
 
-        private static readonly IrcConfig Config = new IrcConfig(DefaultConfigFile);
+        public static IrcConfig Config = new IrcConfig(DefaultConfigFile);
 
-        private IrcClient _irc;
+        public IrcClient Irc;
 
         private Thread _ircThread;
+
+        private static readonly List<IrcCommand> Commands;
+
+        private static readonly List<IrcCommand> QueryCommands;
+
+        public Dictionary<string, SharpStarUser> AuthenticatedUsers { get; private set; }
 
         public override string Name
         {
             get { return "IRC Plugin"; }
+        }
+
+        static IrcPlugin()
+        {
+
+            Commands = new List<IrcCommand>();
+            Commands.Add(new SayCommand());
+            Commands.Add(new WhoCommand());
+            Commands.Add(new IsOnlineCommand());
+            Commands.Add(new KickCommand());
+
+            QueryCommands = new List<IrcCommand>();
+            QueryCommands.Add(new LoginCommand());
+            QueryCommands.Add(new LogoutCommand());
+
         }
 
         public IrcPlugin()
@@ -42,6 +68,8 @@ namespace SharpStarIrcPlugin
             RegisterEvent("clientConnected", ClientConnected);
             RegisterEvent("clientDisconnected", ClientDisconnected);
 
+            AuthenticatedUsers = new Dictionary<string, SharpStarUser>();
+
         }
 
         void _irc_OnError(object sender, ErrorEventArgs e)
@@ -52,9 +80,19 @@ namespace SharpStarIrcPlugin
         public override void OnLoad()
         {
 
-            _ircThread = new Thread(RunIrc);
+            Config.Reload();
 
-            _ircThread.Start();
+            if (Config.Config.Channels.Count > 0)
+            {
+
+                if (Irc != null && Irc.IsConnected)
+                    Irc.Disconnect();
+
+                _ircThread = new Thread(RunIrc);
+
+                _ircThread.Start();
+
+            }
 
         }
 
@@ -63,7 +101,8 @@ namespace SharpStarIrcPlugin
 
             _running = false;
 
-            _ircThread.Abort(); //TODO: figure out a way to avoid this
+            if (_ircThread != null)
+                _ircThread.Abort(); //TODO: figure out a way to avoid this
 
         }
 
@@ -77,19 +116,35 @@ namespace SharpStarIrcPlugin
 
                 Thread.CurrentThread.Name = "IrcThread";
 
-                _irc = new IrcClient();
-                _irc.OnError += _irc_OnError;
-                _irc.ActiveChannelSyncing = true;
+                Irc = new IrcClient();
+                Irc.OnError += _irc_OnError;
+                Irc.OnChannelMessage += _irc_OnChannelMessage;
+                Irc.OnQueryMessage += _irc_OnQueryMessage;
+                Irc.ActiveChannelSyncing = true;
 
-                _irc.Connect(Config.Config.IrcNetwork, Config.Config.IrcPort);
+                Irc.Connect(Config.Config.IrcNetwork, Config.Config.IrcPort);
 
-                _irc.Login(Config.Config.Nick, "SharpStar Bot");
+                if (string.IsNullOrEmpty(Config.Config.Password))
+                    Irc.Login(Config.Config.Nick, "SharpStar Bot");
+                else
+                    Irc.Login(Config.Config.Nick, "SharpStar Bot", 0, Config.Config.Nick, Config.Config.Password);
 
-                _irc.RfcJoin(Config.Config.Channels.ToArray());
+                foreach (IrcChannel chan in Config.Config.Channels)
+                {
+                    if (chan.Password != null)
+                        Irc.RfcJoin(chan.Channel, chan.Password);
+                    else
+                        Irc.RfcJoin(chan.Channel);
+                }
 
                 while (_running)
                 {
-                    _irc.ListenOnce();
+
+                    if (!Irc.IsConnected)
+                        break;
+
+                    Irc.ListenOnce();
+
                 }
 
             }
@@ -102,8 +157,56 @@ namespace SharpStarIrcPlugin
             }
             finally
             {
-                _irc.RfcQuit("Goodbye.");
-                _irc.Disconnect();
+
+                if (Irc.IsConnected)
+                {
+                    Irc.RfcQuit("Goodbye.");
+                    Irc.Disconnect();
+                }
+            
+            }
+
+        }
+
+        private void _irc_OnQueryMessage(object sender, IrcEventArgs e)
+        {
+
+            if (e.Data.Type == ReceiveType.QueryMessage)
+            {
+
+                IrcCommand cmd = QueryCommands.SingleOrDefault(p => p.CommandName.Equals(e.Data.MessageArray[0], StringComparison.OrdinalIgnoreCase));
+
+                if (cmd != null)
+                    cmd.ParseCommand(this, null, e.Data.Nick, e.Data.MessageArray.Skip(1).ToArray());
+
+            }
+
+        }
+
+        private void _irc_OnChannelMessage(object sender, IrcEventArgs e)
+        {
+
+            string channel = e.Data.Channel;
+
+            string[] ex = Regex.Split(e.Data.Message, Config.Config.CommandPrefix);
+
+            if (ex.Length > 1)
+            {
+
+                string joined = string.Join("", ex.Skip(1));
+
+                string[] ex2 = joined.Split(' ');
+
+                if (ex2.Length > 0)
+                {
+
+                    IrcCommand cmd = Commands.SingleOrDefault(p => p.CommandName.Equals(ex2[0], StringComparison.OrdinalIgnoreCase));
+
+                    if (cmd != null)
+                        cmd.ParseCommand(this, channel, e.Data.Nick, ex2.Skip(1).ToArray());
+
+                }
+
             }
 
         }
@@ -113,12 +216,12 @@ namespace SharpStarIrcPlugin
 
             var csp = packet as ChatSentPacket;
 
-            if (csp != null && !csp.Message.StartsWith("/"))
+            if (csp != null && !csp.Message.StartsWith("/") && Irc != null && Irc.IsConnected)
             {
 
-                foreach (string channel in Config.Config.Channels)
+                foreach (string channel in Config.Config.Channels.Select(p => p.Channel))
                 {
-                    _irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0}: {2}", IrcConstants.IrcBold, client.Server.Player.Name, csp.Message));
+                    Irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0}: {2}", IrcConstants.IrcBold, client.Server.Player.Name, csp.Message));
                 }
 
             }
@@ -129,12 +232,12 @@ namespace SharpStarIrcPlugin
 
             var ccp = packet as ClientConnectPacket;
 
-            if (ccp != null)
+            if (ccp != null && Irc != null && Irc.IsConnected)
             {
 
-                foreach (string channel in Config.Config.Channels)
+                foreach (string channel in Config.Config.Channels.Select(p => p.Channel))
                 {
-                    _irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0} connected", IrcConstants.IrcBold, client.Server.Player.Name));
+                    Irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0} connected", IrcConstants.IrcBold, client.Server.Player.Name));
                 }
 
             }
@@ -146,12 +249,12 @@ namespace SharpStarIrcPlugin
 
             var cdp = packet as ClientDisconnectPacket;
 
-            if (cdp != null)
+            if (cdp != null && Irc != null && Irc.IsConnected)
             {
 
-                foreach (string channel in Config.Config.Channels)
+                foreach (string channel in Config.Config.Channels.Select(p => p.Channel))
                 {
-                    _irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0} disconnected", IrcConstants.IrcBold, client.Server.Player.Name));
+                    Irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0} disconnected", IrcConstants.IrcBold, client.Server.Player.Name));
                 }
 
             }

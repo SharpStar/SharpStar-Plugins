@@ -21,18 +21,7 @@ namespace SharpStarIrcPlugin
 
             FileName = file;
 
-            if (File.Exists(file))
-            {
-                Config = JsonConvert.DeserializeObject<IrcConfigFile>(File.ReadAllText(file));
-            }
-            else
-            {
-                
-                Config = new IrcConfigFile();
-                
-                SetDefaults();
-
-            }
+            Reload();
 
         }
 
@@ -40,9 +29,12 @@ namespace SharpStarIrcPlugin
         {
 
             Config.Nick = "SharpStarBot-" + Rand.Next(1000);
-            Config.Channels = new List<string>();
+            Config.Channels.Add(new IrcChannel { Channel = "##sharpstar-bots", Password = null });
+
             Config.IrcNetwork = "irc.freenode.net";
             Config.IrcPort = 6667;
+            Config.CommandPrefix = "!";
+
 
             Save();
 
@@ -51,6 +43,24 @@ namespace SharpStarIrcPlugin
         public void Save()
         {
             File.WriteAllText(FileName, JsonConvert.SerializeObject(Config, Formatting.Indented));
+        }
+
+        public void Reload()
+        {
+
+            if (File.Exists(FileName))
+            {
+                Config = JsonConvert.DeserializeObject<IrcConfigFile>(File.ReadAllText(FileName));
+            }
+            else
+            {
+
+                Config = new IrcConfigFile();
+
+                SetDefaults();
+
+            }
+
         }
 
     }

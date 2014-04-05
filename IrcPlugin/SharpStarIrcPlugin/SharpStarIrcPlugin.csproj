@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -44,7 +45,7 @@
     </Reference>
     <Reference Include="SharpStar.Lib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\SharpStar.Lib.dll</HintPath>
+      <HintPath>..\..\..\SharpStar\SharpStar.Lib\bin\Debug\SharpStar.Lib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -55,10 +56,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\IsOnlineCommand.cs" />
+    <Compile Include="Commands\KickCommand.cs" />
+    <Compile Include="Commands\SayCommand.cs" />
+    <Compile Include="Commands\WhoCommand.cs" />
+    <Compile Include="IrcChannel.cs" />
+    <Compile Include="IrcCommand.cs" />
     <Compile Include="IrcConfig.cs" />
     <Compile Include="IrcConfigFile.cs" />
     <Compile Include="IrcPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryCommands\LoginCommand.cs" />
+    <Compile Include="QueryCommands\LogoutCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
