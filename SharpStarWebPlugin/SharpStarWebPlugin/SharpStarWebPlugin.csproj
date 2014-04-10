@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4C75EBAB-63DC-4D93-AFD6-9DABD735C99A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SharpStarWebPlugin</RootNamespace>
+    <AssemblyName>SharpStarWebPlugin</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Mono.Addins, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Mono.Addins.1.1\lib\Mono.Addins.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.2\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Text, Version=3.9.69.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\ServiceStack.Text.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpStar.Lib">
+      <HintPath>..\..\..\..\GitHub\SharpStar\SharpStar\bin\Debug\SharpStar.Lib.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="XSockets.Controllers">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Controllers.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Core, Version=3.0.6.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Core.Common, Version=3.0.6.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Core.Communication">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Core.Communication.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Plugin.Framework, Version=1.4.3.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Plugin.Framework.1.4.3\lib\XSockets.Plugin.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Protocol">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Protocol.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Serialization, Version=3.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Server">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Server.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.WebRTC">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.WebRTC.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Responses\SharpStarPlayer.cs" />
+    <Compile Include="Responses\SharpStarResponse.cs" />
+    <Compile Include="Responses\SharpStarUserResponse.cs" />
+    <Compile Include="Responses\StatusResponse.cs" />
+    <Compile Include="SharpStarController.cs" />
+    <Compile Include="SharpStarMainController.cs" />
+    <Compile Include="SharpStarWeb.cs" />
+    <Compile Include="WebPlugin.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Scripts\XSockets.fallback.latest.min.js.map" />
+    <None Include="Scripts\XSockets.latest.min.js.map" />
+    <None Include="Scripts\XSockets.WebAPI.fallback.latest.min.js.map" />
+    <None Include="Scripts\XSockets.WebRTC.latest.min.js.map" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Scripts\XSockets.fallback.latest.js" />
+    <Content Include="Scripts\XSockets.fallback.latest.min.js" />
+    <Content Include="Scripts\XSockets.latest.js" />
+    <Content Include="Scripts\XSockets.latest.min.js" />
+    <Content Include="Scripts\XSockets.WebAPI.fallback.latest.js" />
+    <Content Include="Scripts\XSockets.WebAPI.fallback.latest.min.js" />
+    <Content Include="Scripts\XSockets.WebRTC.latest.js" />
+    <Content Include="Scripts\XSockets.WebRTC.latest.min.js" />
+    <Content Include="XSocketsNET\ServerExample\ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
