@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace EssentialCommandsPlugin
 {
@@ -8,6 +9,14 @@ namespace EssentialCommandsPlugin
 
         [JsonProperty]
         public string Motd { get; set; }
+
+        [JsonProperty]
+        public List<EssentialCommandsAdvert> Adverts { get; set; }
+
+        public EssentialCommandsConfigFile()
+        {
+            Adverts = new List<EssentialCommandsAdvert>();
+        }
 
     }
 }
