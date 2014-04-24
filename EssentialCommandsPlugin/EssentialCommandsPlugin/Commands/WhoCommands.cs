@@ -23,16 +23,20 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length == 1)
             {
-                int.TryParse(args[0], out page);
-                page--;
+                if (int.TryParse(args[0], out page))
+                    page--;
+                else
+                    page = 0;
             }
             else if (args.Length == 2)
             {
 
-                int.TryParse(args[1], out page);
-                page--;
+                if (int.TryParse(args[0], out page))
+                    page--;
+                else
+                    page = 0;
 
-                matchPlayers = args[0];
+                matchPlayers = string.Join("", string.Join(" ", args.Skip(1)));
 
             }
 
@@ -62,7 +66,7 @@ namespace EssentialCommandsPlugin.Commands
             {
 
                 var listOfPlayers = (from p in SharpStarMain.Instance.Server.Clients
-                                     where p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) > 0
+                                     where p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) >= 0
                                      orderby p.ConnectionTime descending
                                      select new
                                      {
@@ -83,7 +87,7 @@ namespace EssentialCommandsPlugin.Commands
             }
             else
             {
-                client.SendChatMessage("Server", "Syntax: /who <page> or /who <player> <page> ");
+                client.SendChatMessage("Server", "Syntax: /who <page> or /who <page> <player> ");
             }
 
         }
@@ -115,10 +119,10 @@ namespace EssentialCommandsPlugin.Commands
             else if (args.Length == 2)
             {
 
-                int.TryParse(args[1], out page);
+                int.TryParse(args[0], out page);
                 page--;
 
-                matchPlayers = args[0];
+                matchPlayers = string.Join("", string.Join(" ", args.Skip(1)));
 
             }
 
@@ -149,7 +153,7 @@ namespace EssentialCommandsPlugin.Commands
             {
 
                 var listOfPlayers = (from p in SharpStarMain.Instance.Server.Clients
-                                     where p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) > 0 && p.Player.Coordinates == client.Server.Player.Coordinates
+                                     where p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) >= 0 && p.Player.Coordinates == client.Server.Player.Coordinates
                                      orderby p.ConnectionTime descending
                                      select new
                                      {
@@ -170,7 +174,7 @@ namespace EssentialCommandsPlugin.Commands
             }
             else
             {
-                client.SendChatMessage("Server", "Syntax: /worldwho <page> or /who <player> <page> ");
+                client.SendChatMessage("Server", "Syntax: /worldwho <page> or /worldwho <page> <player> ");
             }
 
         }

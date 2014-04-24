@@ -73,7 +73,7 @@ namespace EssentialCommandsPlugin.Commands
 
                             }
 
-                            if (cl.Player.UserAccount.Id == ship.OwnerUserAccountId)
+                            if (cl.Player.UserAccount.Id == ship.OwnerUserAccountId || EssentialCommands.IsAdmin(cl.PlayerClient))
                                 continue;
 
                             EssentialCommandsShipUser user = EssentialCommands.Database.GetShipUser(cl.Player.UserAccount.Id, ship.Id);
