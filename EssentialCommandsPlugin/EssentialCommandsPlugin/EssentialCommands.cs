@@ -43,6 +43,8 @@ namespace EssentialCommandsPlugin
         private readonly AdvertCommands _advertCommands = new AdvertCommands();
         private readonly WhoCommands _whoCommands = new WhoCommands();
         private readonly ShipCommand _shipCommand = new ShipCommand();
+        private readonly MuteCommand _muteCommand = new MuteCommand();
+        private readonly SpawnCommands _spawnCommands = new SpawnCommands();
 
         #endregion
 
@@ -69,10 +71,13 @@ namespace EssentialCommandsPlugin
             RegisterCommandObject(_advertCommands);
             RegisterCommandObject(_whoCommands);
             RegisterCommandObject(_shipCommand);
+            RegisterCommandObject(_muteCommand);
+            RegisterCommandObject(_spawnCommands);
 
             RegisterEventObject(_banCommand);
             RegisterEventObject(_motdCommands);
             RegisterEventObject(_shipCommand);
+            RegisterEventObject(_muteCommand);
 
             _advertCommands.StartSendingAdverts();
 

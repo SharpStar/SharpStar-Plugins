@@ -28,6 +28,7 @@ namespace EssentialCommandsPlugin
             conn.CreateTable<EssentialCommandsBan>();
             conn.CreateTable<EssentialCommandsShip>();
             conn.CreateTable<EssentialCommandsShipUser>();
+            conn.CreateTable<EssentialCommandsMute>();
 
             conn.Close();
             conn.Dispose();
@@ -272,6 +273,84 @@ namespace EssentialCommandsPlugin
 
             conn.Close();
             conn.Dispose();
+
+        }
+
+        public bool AddMute(int userId, DateTime? expireTime)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsMute>();
+
+            if (tbl.Any(p => p.UserId == userId))
+                return false;
+
+            var mute = new EssentialCommandsMute
+            {
+                UserId = userId,
+                ExpireTime = expireTime
+            };
+
+            conn.Insert(mute);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public bool RemoveMute(int userId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsMute>();
+
+            EssentialCommandsMute mute = tbl.SingleOrDefault(p => p.UserId == userId);
+
+            if (mute == null)
+                return false;
+
+            conn.Delete<EssentialCommandsMute>(mute.Id);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public bool IsUserMuted(int userId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsMute>();
+
+            EssentialCommandsMute mute = tbl.SingleOrDefault(p => p.UserId == userId);
+
+            conn.Close();
+            conn.Dispose();
+
+            return mute != null;
+
+        }
+
+        public List<EssentialCommandsMute> GetMutedUsers()
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsMute>();
+
+            var mutedUsers = tbl.ToList();
+
+            conn.Close();
+            conn.Dispose();
+
+            return mutedUsers;
 
         }
 

@@ -58,8 +58,10 @@
     <Compile Include="Commands\KickCommand.cs" />
     <Compile Include="Commands\KillCommand.cs" />
     <Compile Include="Commands\MotdCommand.cs" />
+    <Compile Include="Commands\MuteCommand.cs" />
     <Compile Include="Commands\PermissionCommands.cs" />
     <Compile Include="Commands\ShipCommand.cs" />
+    <Compile Include="Commands\SpawnCommands.cs" />
     <Compile Include="Commands\WarpCommands.cs" />
     <Compile Include="Commands\WhoCommands.cs" />
     <Compile Include="EssentialCommands.cs" />
@@ -68,6 +70,7 @@
     <Compile Include="EssentialCommandsConfig.cs" />
     <Compile Include="EssentialCommandsDb.cs" />
     <Compile Include="EssentialCommandsConfigFile.cs" />
+    <Compile Include="EssentialCommandsMute.cs" />
     <Compile Include="EssentialCommandsShip.cs" />
     <Compile Include="EssentialCommandsShipUser.cs" />
     <Compile Include="Commands\MakeRemoveAdminCommand.cs" />
