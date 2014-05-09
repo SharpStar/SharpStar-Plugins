@@ -45,6 +45,7 @@ namespace EssentialCommandsPlugin
         private readonly ShipCommand _shipCommand = new ShipCommand();
         private readonly MuteCommand _muteCommand = new MuteCommand();
         private readonly SpawnCommands _spawnCommands = new SpawnCommands();
+        private readonly ProtectPlanetCommands _planetProtect = new ProtectPlanetCommands();
 
         #endregion
 
@@ -58,6 +59,7 @@ namespace EssentialCommandsPlugin
         {
 
             Config = new EssentialCommandsConfig(ConfigFileName);
+            Config.Save();
 
             RegisterCommandObject(_makeRemoveAdmin);
             RegisterCommandObject(_kickCommand);
@@ -73,11 +75,13 @@ namespace EssentialCommandsPlugin
             RegisterCommandObject(_shipCommand);
             RegisterCommandObject(_muteCommand);
             RegisterCommandObject(_spawnCommands);
+            RegisterCommandObject(_planetProtect);
 
             RegisterEventObject(_banCommand);
             RegisterEventObject(_motdCommands);
             RegisterEventObject(_shipCommand);
             RegisterEventObject(_muteCommand);
+            RegisterEventObject(_planetProtect);
 
             _advertCommands.StartSendingAdverts();
 

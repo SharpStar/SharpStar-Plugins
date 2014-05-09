@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using SharpStar.Lib.Database;
+using SharpStar.Lib.DataTypes;
 using SQLite;
 
 namespace EssentialCommandsPlugin
@@ -29,6 +30,8 @@ namespace EssentialCommandsPlugin
             conn.CreateTable<EssentialCommandsShip>();
             conn.CreateTable<EssentialCommandsShipUser>();
             conn.CreateTable<EssentialCommandsMute>();
+            conn.CreateTable<EssentialCommandsPlanet>();
+            conn.CreateTable<EssentialCommandsBuilder>();
 
             conn.Close();
             conn.Dispose();
@@ -351,6 +354,173 @@ namespace EssentialCommandsPlugin
             conn.Dispose();
 
             return mutedUsers;
+
+        }
+
+        public List<EssentialCommandsPlanet> GetPlanets()
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsPlanet>();
+
+            var planets = tbl.ToList();
+
+            conn.Close();
+            conn.Dispose();
+
+            return planets;
+
+        }
+
+        public EssentialCommandsPlanet GetProtectedPlanet(WorldCoordinate coords)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsPlanet>();
+
+            var planet = tbl.SingleOrDefault(p => p == coords);
+
+            conn.Close();
+            conn.Dispose();
+
+            return planet;
+
+        }
+
+        public EssentialCommandsPlanet AddProtectedPlanet(WorldCoordinate coords, int ownerId)
+        {
+
+            if (GetProtectedPlanet(coords) != null)
+                return null;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            EssentialCommandsPlanet planet = new EssentialCommandsPlanet(coords);
+            planet.OwnerId = ownerId;
+
+            planet.Id = conn.Insert(planet);
+
+            conn.Close();
+            conn.Dispose();
+
+            return planet;
+        
+        }
+
+        public bool RemoveProtectedPlanet(WorldCoordinate coords)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsPlanet>();
+
+            var planet = tbl.SingleOrDefault(p => p == coords);
+
+            if (planet == null)
+                return false;
+
+            var builders = GetPlanetBuilders(planet.Id);
+
+            foreach (var builder in builders) //delete all builders associated with the planet
+            {
+                conn.Delete<EssentialCommandsBuilder>(builder.Id);
+            }
+
+            conn.Delete<EssentialCommandsPlanet>(planet.Id);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public EssentialCommandsBuilder AddPlanetBuilder(WorldCoordinate coords, int userId, int planetId, bool allowed = true)
+        {
+
+            EssentialCommandsPlanet planet = GetProtectedPlanet(coords);
+
+            if (planet == null)
+                return null;
+
+            if (GetPlanetBuilder(userId, planetId) != null)
+                return null;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var builder = new EssentialCommandsBuilder
+            {
+                UserId = userId,
+                PlanetId = planetId,
+                Allowed = allowed
+            };
+
+            int id = conn.Insert(builder);
+
+            builder.Id = id;
+
+            conn.Close();
+            conn.Dispose();
+
+            return builder;
+
+        }
+
+        public bool RemovePlanetBuilder(WorldCoordinate coords, int userId, int planetId)
+        {
+
+            EssentialCommandsPlanet planet = GetProtectedPlanet(coords);
+
+            if (planet == null)
+                return false;
+
+            var builder = GetPlanetBuilder(userId, planetId);
+
+            if (builder == null)
+                return false;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            conn.Delete<EssentialCommandsBuilder>(builder.Id);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public EssentialCommandsBuilder GetPlanetBuilder(int userId, int planetId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBuilder>();
+
+            var builder = tbl.SingleOrDefault(p => p.UserId == userId && p.PlanetId == planetId);
+
+            conn.Close();
+            conn.Dispose();
+
+            return builder;
+
+        }
+
+        public List<EssentialCommandsBuilder> GetPlanetBuilders(int planetId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBuilder>();
+
+            var builders = tbl.Where(p => p.PlanetId == planetId).ToList();
+
+            conn.Close();
+            conn.Dispose();
+
+            return builders;
 
         }
 
