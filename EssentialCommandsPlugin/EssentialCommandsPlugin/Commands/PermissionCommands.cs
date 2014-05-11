@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Database;
+using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
@@ -12,18 +14,68 @@ namespace EssentialCommandsPlugin.Commands
     public class PermissionCommands
     {
 
-        [Command("addperm")]
+        public static readonly List<EssentialCommandsGroup> Groups;
+
+        static PermissionCommands()
+        {
+            Groups = new List<EssentialCommandsGroup>();
+        }
+
+        public PermissionCommands()
+        {
+            RefreshGroups();
+        }
+
+        public void RefreshGroups()
+        {
+            Groups.Clear();
+            Groups.AddRange(EssentialCommands.Database.GetGroups());
+        }
+
+        [Event("chatReceived")]
+        public void OnChatReceived(IPacket packet, StarboundClient client)
+        {
+
+            ChatReceivedPacket csp = (ChatReceivedPacket)packet;
+
+            var plr = SharpStarMain.Instance.Server.Clients.SingleOrDefault(p => p.Player.Name == csp.Name);
+
+            if (plr != null && plr.Player.UserGroupId.HasValue)
+            {
+                EssentialCommandsGroup group = Groups.SingleOrDefault(p => p.GroupId == plr.Player.UserGroupId);
+
+                if (group != null && !string.IsNullOrEmpty(group.Prefix))
+                    csp.Name = String.Format("[{0}] {1}", group.Prefix, csp.Name);
+            }
+
+        }
+
+        [Event("connectionResponse")]
+        public void OnConnect(IPacket packet, StarboundClient client)
+        {
+
+            ConnectionResponsePacket crp = (ConnectionResponsePacket)packet;
+
+            foreach (EssentialCommandsGroup group in Groups)
+            {
+                if (client.Server.Player.Name.IndexOf(group.Prefix, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    crp.Success = false;
+                    crp.RejectionReason = "Your player name is invalid!";
+
+                    break;
+                }
+            }
+
+        }
+
+        [Command("addperm", "Give a user permissions to a set of commands")]
+        [CommandPermission("permissions")]
         public void AddPermission(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "addperm"))
                 return;
-
-            }
 
             if (args.Length < 2)
             {
@@ -52,18 +104,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("removeperm")]
+        [Command("removeperm", "Remove a user's permission")]
+        [CommandPermission("permissions")]
         public void RemovePermission(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "removeperm"))
                 return;
-
-            }
 
             if (args.Length < 2)
             {
@@ -94,23 +141,20 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("creategroup")]
+        [Command("creategroup", "Create a permission group")]
+        [CommandPermission("permissions")]
         public void CreateGroup(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "creategroup"))
                 return;
-
-            }
 
             if (args.Length == 0)
             {
 
                 client.SendChatMessage("Server", "Syntax: /creategroup <group name> <default>");
+
+                return;
 
             }
 
@@ -129,18 +173,59 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("deletegroup")]
-        public void DeleteGroup(StarboundClient client, string[] args)
+        [Command("setgroupprefix", "Sets a group's prefix")]
+        [CommandPermission("permissions")]
+        public void SetGroupPrefix(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
+            if (!EssentialCommands.CanUserAccess(client, "setgroupprefix"))
+                return;
+
+            if (args.Length < 2)
             {
 
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
+                client.SendChatMessage("Server", "Syntax: /setgroupprefix <group name> <prefix>");
 
                 return;
 
             }
+
+            SharpStarGroup group = SharpStarMain.Instance.Database.GetGroup(args[0]);
+
+            if (group == null)
+            {
+
+                client.SendChatMessage("Server", "Group does not exist!");
+
+                return;
+
+            }
+
+            EssentialCommandsGroup grp = EssentialCommands.Database.GetGroup(group.Id);
+
+            if (grp == null)
+            {
+                EssentialCommands.Database.AddGroup(group.Id, args[1]);
+            }
+            else
+            {
+                EssentialCommands.Database.SetGroupPrefix(group.Id, args[1]);
+            }
+
+            RefreshGroups();
+
+            client.SendChatMessage("Server", "Group prefix set!");
+
+
+        }
+
+        [Command("deletegroup", "Delete a permission group")]
+        [CommandPermission("permissions")]
+        public void DeleteGroup(StarboundClient client, string[] args)
+        {
+
+            if (!EssentialCommands.CanUserAccess(client, "deletegroup"))
+                return;
 
             if (args.Length == 0)
             {
@@ -175,18 +260,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("addgroupperm")]
+        [Command("addgroupperm", "Add a permission to a group")]
+        [CommandPermission("permissions")]
         public void AddGroupPermission(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "addgroupperm"))
                 return;
-
-            }
 
             if (args.Length < 2)
             {
@@ -210,18 +290,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("removegroupperm")]
+        [Command("removegroupperm", "Remove a permission from a group")]
+        [CommandPermission("permissions")]
         public void RemoveGroupPermission(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "removegroupperm"))
                 return;
-
-            }
 
             if (args.Length < 2)
             {
@@ -245,18 +320,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("setdefaultgroup")]
+        [Command("setdefaultgroup", "Set the default group")]
+        [CommandPermission("permissions")]
         public void SetDefaultGroup(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "setdefaultgroup"))
                 return;
-
-            }
 
             if (args.Length == 0)
             {
@@ -280,18 +350,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("setusergroup")]
+        [Command("setusergroup", "Set a user's group")]
+        [CommandPermission("permissions")]
         public void SetUserGroup(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("permissions"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "setusergroup"))
                 return;
-
-            }
 
             if (args.Length < 2)
             {
@@ -312,7 +377,7 @@ namespace EssentialCommandsPlugin.Commands
                 return;
 
             }
-            
+
             SharpStarUser user = SharpStarMain.Instance.Database.GetUser(args[0]);
 
             SharpStarMain.Instance.Database.ChangeUserGroup(user.Id, group.Id);

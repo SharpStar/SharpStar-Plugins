@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
@@ -12,19 +13,14 @@ namespace EssentialCommandsPlugin.Commands
     public class GiveItemCommand
     {
 
-        [Command("giveitem")]
+        [Command("giveitem", "Give a player an item")]
+        [CommandPermission("giveitem")]
         public void GiveItem(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("giveitem"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "giveitem"))
                 return;
-
-            }
-
+            
             if (args.Length < 3)
             {
 

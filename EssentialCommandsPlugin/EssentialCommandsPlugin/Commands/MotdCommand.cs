@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
@@ -11,18 +12,13 @@ namespace EssentialCommandsPlugin.Commands
     public class MotdCommand
     {
 
-        [Command("setmotd")]
+        [Command("setmotd", "Set the server's message of the day")]
+        [CommandPermission("setmotd")]
         public void SetMotd(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("setmotd"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "setmotd"))
                 return;
-
-            }
 
             string motd = string.Join(" ", args);
 

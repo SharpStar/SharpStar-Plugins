@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
@@ -12,18 +13,13 @@ namespace EssentialCommandsPlugin.Commands
     public class KillCommand
     {
 
-        [Command("kill")]
+        [Command("kill", "Kill a player")]
+        [CommandPermission("kill")]
         public void KillPlayer(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("kill"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "kill"))
                 return;
-
-            }
 
             if (args.Length == 0)
             {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
@@ -13,7 +14,8 @@ namespace EssentialCommandsPlugin.Commands
     {
 
 
-        [Command("warpto")]
+        [Command("warpto", "Warp to a player's ship")]
+        [CommandPermission("warp")]
         public void WarpToPlayer(StarboundClient client, string[] args)
         {
 
@@ -52,7 +54,8 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("warptome")]
+        [Command("warptome", "Warp a player to your ship")]
+        [CommandPermission("warp")]
         public void WarpToMe(StarboundClient client, string[] args)
         {
 

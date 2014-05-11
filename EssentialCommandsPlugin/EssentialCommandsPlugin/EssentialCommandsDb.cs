@@ -32,6 +32,7 @@ namespace EssentialCommandsPlugin
             conn.CreateTable<EssentialCommandsMute>();
             conn.CreateTable<EssentialCommandsPlanet>();
             conn.CreateTable<EssentialCommandsBuilder>();
+            conn.CreateTable<EssentialCommandsGroup>();
 
             conn.Close();
             conn.Dispose();
@@ -521,6 +522,130 @@ namespace EssentialCommandsPlugin
             conn.Dispose();
 
             return builders;
+
+        }
+
+        public EssentialCommandsGroup AddGroup(int groupId, string prefix)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsGroup>();
+
+            EssentialCommandsGroup group = tbl.SingleOrDefault(p => p.GroupId == groupId);
+
+            if (group != null)
+            {
+
+                conn.Close();
+                conn.Dispose();
+
+                return null;
+
+            }
+
+            group = new EssentialCommandsGroup
+            {
+                GroupId = groupId,
+                Prefix = prefix
+            };
+
+            group.Id = conn.Insert(group);
+
+            conn.Close();
+            conn.Dispose();
+
+            return group;
+
+        }
+
+        public bool RemoveGroup(int groupId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsGroup>();
+
+            EssentialCommandsGroup group = tbl.SingleOrDefault(p => p.GroupId == groupId);
+
+            if (group == null)
+            {
+
+                conn.Close();
+                conn.Dispose();
+
+                return false;
+
+            }
+
+            conn.Delete<SharpStarGroupPermission>(group.Id);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public bool SetGroupPrefix(int groupId, string prefix)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsGroup>();
+
+            EssentialCommandsGroup group = tbl.SingleOrDefault(p => p.GroupId == groupId);
+
+            if (group == null)
+            {
+
+                conn.Close();
+                conn.Dispose();
+
+                return false;
+
+            }
+
+            group.Prefix = prefix;
+
+            conn.Update(group);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public EssentialCommandsGroup GetGroup(int groupId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsGroup>();
+
+            EssentialCommandsGroup group = tbl.SingleOrDefault(p => p.GroupId == groupId);
+
+            conn.Close();
+            conn.Dispose();
+
+            return group;
+
+        }
+
+        public List<EssentialCommandsGroup> GetGroups()
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsGroup>();
+
+            var groups = tbl.ToList();
+
+            conn.Close();
+            conn.Dispose();
+
+            return groups;
 
         }
 

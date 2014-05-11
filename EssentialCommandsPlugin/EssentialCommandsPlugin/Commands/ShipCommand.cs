@@ -12,7 +12,7 @@ namespace EssentialCommandsPlugin.Commands
     public class ShipCommand
     {
 
-        [Command("ship")]
+        [Command("ship", "Set your ship's protection status")]
         public void Ship(StarboundClient client, string[] args)
         {
 

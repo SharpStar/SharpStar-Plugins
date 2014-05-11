@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Timers;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
@@ -59,18 +60,13 @@ namespace EssentialCommandsPlugin.Commands
             _advertTimers.Clear();
         }
 
-        [Command("addadvert")]
+        [Command("addadvert", "Add an advert to display")]
+        [CommandPermission("adverts")]
         public void AddAdvert(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("adverts"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "addadvert"))
                 return;
-
-            }
 
             if (args.Length < 3)
             {
@@ -134,18 +130,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("removeadvert")]
+        [Command("removeadvert", "Remove an advert")]
+        [CommandPermission("adverts")]
         public void RemoveAdvert(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("adverts"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "removeadvert"))
                 return;
-
-            }
 
             if (!EssentialCommands.Config.ConfigFile.Adverts.Any(p => p.AdvertName.Equals(args[0], StringComparison.OrdinalIgnoreCase)))
             {
@@ -175,18 +166,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("toggleadvert")]
+        [Command("toggleadvert", "Toggle advert")]
+        [CommandPermission("adverts")]
         public void ToggleAdvert(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("adverts"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "toggleadvert"))
                 return;
-
-            }
 
             if (args.Length != 1)
             {

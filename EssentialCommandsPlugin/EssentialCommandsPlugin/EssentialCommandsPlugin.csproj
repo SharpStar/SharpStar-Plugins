@@ -52,10 +52,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\CommandPermissionAttribute.cs" />
     <Compile Include="Commands\AdvertCommands.cs" />
     <Compile Include="Commands\BanCommand.cs" />
     <Compile Include="Commands\BroadcastCommand.cs" />
     <Compile Include="Commands\GiveItemCommand.cs" />
+    <Compile Include="Commands\HelpCommand.cs" />
     <Compile Include="Commands\KickCommand.cs" />
     <Compile Include="Commands\KillCommand.cs" />
     <Compile Include="Commands\MotdCommand.cs" />
@@ -73,6 +75,7 @@
     <Compile Include="EssentialCommandsConfig.cs" />
     <Compile Include="EssentialCommandsDb.cs" />
     <Compile Include="EssentialCommandsConfigFile.cs" />
+    <Compile Include="EssentialCommandsGroup.cs" />
     <Compile Include="EssentialCommandsMute.cs" />
     <Compile Include="EssentialCommandsPlanet.cs" />
     <Compile Include="EssentialCommandsShip.cs" />

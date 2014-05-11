@@ -11,7 +11,7 @@ namespace EssentialCommandsPlugin.Commands
     public class WhoCommands
     {
 
-        [Command("who")]
+        [Command("who", "List the players on the server")]
         public void WhoCommand(StarboundClient client, string[] args)
         {
 
@@ -92,7 +92,7 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("worldwho")]
+        [Command("worldwho", "List the players on your world")]
         public void WorldWhoCommand(StarboundClient client, string[] args)
         {
 

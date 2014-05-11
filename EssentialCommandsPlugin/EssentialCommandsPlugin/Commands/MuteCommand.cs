@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
@@ -24,7 +25,8 @@ namespace EssentialCommandsPlugin.Commands
             _mutedUsers = EssentialCommands.Database.GetMutedUsers();
         }
 
-        [Command("mute")]
+        [Command("mute", "Mute a user")]
+        [CommandPermission("mute")]
         public void MuteUser(StarboundClient client, string[] args)
         {
 
@@ -88,7 +90,8 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("unmute")]
+        [Command("unmute", "Unmute a user")]
+        [CommandPermission("mute")]
         public void UnmuteUser(StarboundClient client, string[] args)
         {
 

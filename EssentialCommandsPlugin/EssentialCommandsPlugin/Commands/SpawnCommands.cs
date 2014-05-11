@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
@@ -10,18 +11,13 @@ namespace EssentialCommandsPlugin.Commands
     public class SpawnCommands
     {
 
-        [Command("spawnplanet")]
+        [Command("spawnplanet", "Go to the spawn planet")]
+        [CommandPermission("gotospawn")]
         public void GoToSpawnPlanet(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("gotospawn"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "spawnplanet"))
                 return;
-
-            }
 
             if (EssentialCommands.Config.ConfigFile.SpawnCoordinates == null)
             {
@@ -41,18 +37,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("setspawn")]
+        [Command("setspawn", "Set the spawn location")]
+        [CommandPermission("spawn")]
         public void SetSpawnPlanet(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("spawn"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "setspawn"))
                 return;
-
-            }
 
             if (client.Server.Player.OnShip)
             {
@@ -70,18 +61,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("unsetspawn")]
+        [Command("unsetspawn", "Unset the spawn location")]
+        [CommandPermission("spawn")]
         public void UnsetSpawnPlanet(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("spawn"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "unsetspawn"))
                 return;
-
-            }
 
             EssentialCommands.Config.ConfigFile.SpawnCoordinates = null;
             EssentialCommands.Config.Save();

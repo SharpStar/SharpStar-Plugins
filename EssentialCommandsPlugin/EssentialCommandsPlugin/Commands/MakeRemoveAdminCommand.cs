@@ -1,4 +1,5 @@
 ﻿using System;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
@@ -8,7 +9,8 @@ namespace EssentialCommandsPlugin.Commands
     public class MakeRemoveAdminCommand
     {
 
-        [Command("makeadmin")]
+        [Command("makeadmin", "Make a user an administrator")]
+        [CommandPermission(true)]
         public void MakeAdmin(StarboundClient client, string[] args)
         {
 
@@ -49,7 +51,8 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("removeadmin")]
+        [Command("removeadmin", "Remove an administrator")]
+        [CommandPermission(true)]
         public void RemoveAdmin(StarboundClient client, string[] args)
         {
 

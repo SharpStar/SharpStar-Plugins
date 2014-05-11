@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Database;
 using SharpStar.Lib.Entities;
@@ -21,18 +22,13 @@ namespace EssentialCommandsPlugin.Commands
             RefreshProtectedPlanets();
         }
 
-        [Command("protect")]
+        [Command("protect", "Protect a planet")]
+        [CommandPermission("planetprotect")]
         public void Protect(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("planetprotect"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "protect"))
                 return;
-
-            }
 
             if (client.Server.Player.OnShip || client.Server.Player.Coordinates == null)
             {
@@ -63,18 +59,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("unprotect")]
+        [Command("unprotect", "Remove a planet's protection")]
+        [CommandPermission("planetprotect")]
         public void Unprotect(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("planetprotect"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "unprotect"))
                 return;
-
-            }
 
             if (client.Server.Player.OnShip || client.Server.Player.Coordinates == null)
             {
@@ -113,7 +104,8 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("addbuilder")]
+        [Command("addbuilder", "Allows a user to build on the planet")]
+        [CommandPermission("planetprotect")]
         public void AddBuilder(StarboundClient client, string[] args)
         {
 
@@ -126,14 +118,8 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("planetprotect"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "addbuilder"))
                 return;
-
-            }
 
             SharpStarUser user = SharpStarMain.Instance.Database.GetUser(args[0]);
 
@@ -201,7 +187,8 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("removebuilder")]
+        [Command("removebuilder", "Disallow a user from building on a planet")]
+        [CommandPermission("planetprotect")]
         public void RemoveBuilder(StarboundClient client, string[] args)
         {
 
@@ -214,14 +201,8 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("planetprotect"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "removebuilder"))
                 return;
-
-            }
 
             SharpStarUser user = SharpStarMain.Instance.Database.GetUser(args[0]);
 

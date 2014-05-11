@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using EssentialCommandsPlugin.Attributes;
 using EssentialCommandsPlugin.Commands;
 using Mono.Addins;
 using SharpStar.Lib;
+using SharpStar.Lib.Database;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
@@ -26,8 +29,9 @@ namespace EssentialCommandsPlugin
 
         private const string ConfigFileName = "essentialcommands.json";
 
-        public static EssentialCommandsDb Database = new EssentialCommandsDb(DatabaseName);
+        public static readonly EssentialCommandsDb Database = new EssentialCommandsDb(DatabaseName);
 
+        public static readonly List<Tuple<string, string, string, bool>> Commands;
 
         #region Commands
 
@@ -46,8 +50,14 @@ namespace EssentialCommandsPlugin
         private readonly MuteCommand _muteCommand = new MuteCommand();
         private readonly SpawnCommands _spawnCommands = new SpawnCommands();
         private readonly ProtectPlanetCommands _planetProtect = new ProtectPlanetCommands();
+        private readonly HelpCommand _helpCommand = new HelpCommand();
 
         #endregion
+
+        static EssentialCommands()
+        {
+            Commands = new List<Tuple<string, string, string, bool>>();
+        }
 
 
         public override string Name
@@ -60,6 +70,48 @@ namespace EssentialCommandsPlugin
 
             Config = new EssentialCommandsConfig(ConfigFileName);
             Config.Save();
+
+            Commands.Clear();
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            foreach (Assembly assm in assemblies)
+            {
+
+                Type[] types = assm.GetTypes();
+
+                foreach (Type type in types)
+                {
+
+                    foreach (MethodInfo mi in type.GetMethods())
+                    {
+
+                        var cmdAttribs = mi.GetCustomAttributes(typeof(CommandAttribute), false).ToList();
+                        var permAttribs = mi.GetCustomAttributes(typeof(CommandPermissionAttribute), false).ToList();
+
+                        if (cmdAttribs.Count == 1)
+                        {
+
+                            CommandAttribute cmdAttrib = (CommandAttribute)cmdAttribs[0];
+
+                            if (permAttribs.Count == 1)
+                            {
+                                CommandPermissionAttribute permAttrib = (CommandPermissionAttribute)permAttribs[0];
+
+                                Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, permAttrib.Permission, permAttrib.Admin));
+                            }
+                            else
+                            {
+                                Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, String.Empty, false));
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
 
             RegisterCommandObject(_makeRemoveAdmin);
             RegisterCommandObject(_kickCommand);
@@ -76,12 +128,14 @@ namespace EssentialCommandsPlugin
             RegisterCommandObject(_muteCommand);
             RegisterCommandObject(_spawnCommands);
             RegisterCommandObject(_planetProtect);
+            RegisterCommandObject(_helpCommand);
 
             RegisterEventObject(_banCommand);
             RegisterEventObject(_motdCommands);
             RegisterEventObject(_shipCommand);
             RegisterEventObject(_muteCommand);
             RegisterEventObject(_planetProtect);
+            RegisterEventObject(_permCommands);
 
             _advertCommands.StartSendingAdverts();
 
@@ -142,6 +196,29 @@ namespace EssentialCommandsPlugin
         public static bool IsAdmin(StarboundClient client)
         {
             return client.Server.Player.UserAccount != null && client.Server.Player.UserAccount.IsAdmin;
+        }
+
+        public static bool CanUserAccess(StarboundClient client, string command, bool sendMsg = true)
+        {
+
+            if (IsAdmin(client))
+                return true;
+
+            var cmd = Commands.Single(p => p.Item1 == command);
+
+            if (cmd == null || cmd.Item4)
+                return false;
+
+            if (string.IsNullOrEmpty(cmd.Item3))
+                return true;
+
+            bool hasPerm = client.Server.Player.HasPermission(cmd.Item3);
+
+            if (!hasPerm && sendMsg)
+                client.SendChatMessage("Server", "You do not have permission to use this command!");
+
+            return hasPerm;
+
         }
 
     }

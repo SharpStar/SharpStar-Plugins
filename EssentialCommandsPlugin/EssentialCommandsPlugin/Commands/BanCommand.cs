@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
@@ -10,18 +11,13 @@ namespace EssentialCommandsPlugin.Commands
     public class BanCommand
     {
 
-        [Command("ban")]
+        [Command("ban", "Ban a user")]
+        [CommandPermission("ban")]
         public void BanPlayer(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("ban"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "ban"))
                 return;
-
-            }
 
             string playerName = string.Join(" ", args);
 
@@ -40,18 +36,13 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Command("unban")]
+        [Command("unban", "Unban a user")]
+        [CommandPermission("ban")]
         public void UnbanPlayer(StarboundClient client, string[] args)
         {
 
-            if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("ban"))
-            {
-
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
+            if (!EssentialCommands.CanUserAccess(client, "unban"))
                 return;
-
-            }
 
             if (args.Length == 0)
             {
