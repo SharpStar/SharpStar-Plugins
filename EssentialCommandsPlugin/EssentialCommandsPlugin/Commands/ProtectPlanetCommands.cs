@@ -50,6 +50,27 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
+            if (client.Server.Player.UserAccount.GroupId.HasValue)
+            {
+
+                EssentialCommandsGroup group = EssentialCommands.Database.GetGroup(client.Server.Player.UserAccount.GroupId.Value);
+
+                if (group == null)
+                    group = EssentialCommands.Database.AddGroup(client.Server.Player.UserAccount.GroupId.Value, null);
+
+                var planets = EssentialCommands.Database.GetUserPlanets(client.Server.Player.UserAccount.Id);
+
+                if (planets.Count >= group.ProtectedPlanetLimit)
+                {
+
+                    client.SendChatMessage("Server", "You have reached the limit of planets you can protect!");
+
+                    return;
+
+                }
+
+            }
+
             planet = EssentialCommands.Database.AddProtectedPlanet(client.Server.Player.Coordinates, client.Server.Player.UserAccount.Id);
 
             client.SendChatMessage("Server", "Planet now protected!");

@@ -33,6 +33,8 @@ namespace EssentialCommandsPlugin
             conn.CreateTable<EssentialCommandsPlanet>();
             conn.CreateTable<EssentialCommandsBuilder>();
             conn.CreateTable<EssentialCommandsGroup>();
+            conn.CreateTable<EssentialCommandsCommand>();
+            conn.CreateTable<EssentialCommandsUserCommand>();
 
             conn.Close();
             conn.Dispose();
@@ -390,6 +392,22 @@ namespace EssentialCommandsPlugin
 
         }
 
+        public List<EssentialCommandsPlanet> GetUserPlanets(int userId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsPlanet>();
+
+            var planets = tbl.Where(p => p.OwnerId == userId).ToList();
+
+            conn.Close();
+            conn.Dispose();
+
+            return planets;
+
+        }
+
         public EssentialCommandsPlanet AddProtectedPlanet(WorldCoordinate coords, int ownerId)
         {
 
@@ -407,7 +425,7 @@ namespace EssentialCommandsPlugin
             conn.Dispose();
 
             return planet;
-        
+
         }
 
         public bool RemoveProtectedPlanet(WorldCoordinate coords)
@@ -559,6 +577,27 @@ namespace EssentialCommandsPlugin
 
         }
 
+        public bool SetGroupPlanetLimit(int groupId, int? limit)
+        {
+
+            var group = GetGroup(groupId);
+
+            if (group == null)
+                return false;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            group.ProtectedPlanetLimit = limit;
+
+            conn.Update(group);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
         public bool RemoveGroup(int groupId)
         {
 
@@ -646,6 +685,185 @@ namespace EssentialCommandsPlugin
             conn.Dispose();
 
             return groups;
+
+        }
+
+        public EssentialCommandsCommand AddCommand(int groupId, string command, int limit)
+        {
+
+            if (GetCommand(groupId, command) != null)
+                return null;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var cmd = new EssentialCommandsCommand
+            {
+                GroupId = groupId,
+                Command = command,
+                Limit = limit
+            };
+
+            cmd.Id = conn.Insert(cmd);
+
+            conn.Close();
+            conn.Dispose();
+
+            return cmd;
+
+        }
+
+        public bool RemoveCommand(int groupId, string command)
+        {
+
+            EssentialCommandsCommand cmd = GetCommand(groupId, command);
+
+            if (cmd == null)
+                return false;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            conn.Delete<EssentialCommandsCommand>(cmd.Id);
+
+            var usrTbl = conn.Table<EssentialCommandsUserCommand>();
+
+            var usrCmds = usrTbl.Where(p => p.CommandId == cmd.Id);
+
+            foreach (EssentialCommandsUserCommand usrCmd in usrCmds)
+            {
+                conn.Delete(usrCmd);
+            }
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public List<EssentialCommandsCommand> GetCommands(int groupId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsCommand>();
+
+            var cmds = tbl.Where(p => p.GroupId == groupId).ToList();
+
+            conn.Close();
+            conn.Dispose();
+
+            return cmds;
+
+        }
+
+        public EssentialCommandsCommand GetCommand(int groupId, string command)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsCommand>();
+
+            EssentialCommandsCommand cmd = tbl.SingleOrDefault(p => p.GroupId == groupId && p.Command == command);
+
+            conn.Close();
+            conn.Dispose();
+
+            return cmd;
+
+        }
+
+        public bool SetCommandLimit(int groupId, string command, int? limit)
+        {
+
+            EssentialCommandsCommand cmd = GetCommand(groupId, command);
+
+            if (cmd == null)
+                return false;
+
+            cmd.Limit = limit;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            conn.Update(cmd);
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public void RemoveUserCommmands(int userId)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsUserCommand>();
+
+            var usrCmds = tbl.Where(p => p.UserId == userId);
+
+            foreach (var usrCmd in usrCmds)
+            {
+                conn.Delete(usrCmd);
+            }
+
+            conn.Close();
+            conn.Dispose();
+
+        }
+
+        public bool IncCommandTimesUsed(int userId, int groupId, string command)
+        {
+
+            var grpCmd = GetCommand(groupId, command);
+
+            if (grpCmd == null)
+                return false;
+
+            var cmd = GetUserCommand(userId, groupId, command);
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            if (cmd == null)
+            {
+                conn.Insert(new EssentialCommandsUserCommand
+                {
+                    UserId = userId,
+                    CommandId = grpCmd.Id,
+                    TimesUsed = 1
+                });
+            }
+            else
+            {
+                cmd.TimesUsed += 1;
+                conn.Update(cmd);
+            }
+
+            conn.Close();
+            conn.Dispose();
+
+            return true;
+
+        }
+
+        public EssentialCommandsUserCommand GetUserCommand(int userId, int groupId, string command)
+        {
+
+            EssentialCommandsCommand cmd = GetCommand(groupId, command);
+
+            if (cmd == null)
+                return null;
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsUserCommand>();
+
+            EssentialCommandsUserCommand usrCmd = tbl.SingleOrDefault(p => p.UserId == userId && p.CommandId == cmd.Id);
+
+            conn.Close();
+            conn.Dispose();
+
+            return usrCmd;
 
         }
 

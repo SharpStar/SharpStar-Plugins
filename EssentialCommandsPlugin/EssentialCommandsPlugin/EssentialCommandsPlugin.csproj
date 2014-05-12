@@ -72,6 +72,7 @@
     <Compile Include="EssentialCommands.cs" />
     <Compile Include="EssentialCommandsAdvert.cs" />
     <Compile Include="EssentialCommandsBan.cs" />
+    <Compile Include="EssentialCommandsCommand.cs" />
     <Compile Include="EssentialCommandsConfig.cs" />
     <Compile Include="EssentialCommandsDb.cs" />
     <Compile Include="EssentialCommandsConfigFile.cs" />
@@ -81,6 +82,7 @@
     <Compile Include="EssentialCommandsShip.cs" />
     <Compile Include="EssentialCommandsShipUser.cs" />
     <Compile Include="Commands\MakeRemoveAdminCommand.cs" />
+    <Compile Include="EssentialCommandsUserCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

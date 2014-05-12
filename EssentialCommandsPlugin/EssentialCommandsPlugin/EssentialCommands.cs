@@ -146,7 +146,41 @@ namespace EssentialCommandsPlugin
             _advertCommands.StopSendingAdverts();
         }
 
-        
+        public override bool OnChatCommandReceived(StarboundClient client, string command, string[] args)
+        {
+
+            if (client.Server.Player.UserGroupId.HasValue && client.Server.Player.UserAccount != null)
+            {
+
+                var cmd = Database.GetCommand(client.Server.Player.UserGroupId.Value, command);
+
+                if (cmd != null)
+                {
+
+                    Database.IncCommandTimesUsed(client.Server.Player.UserAccount.Id, cmd.GroupId, command);
+
+                    var usrCmd = Database.GetUserCommand(client.Server.Player.UserAccount.Id, cmd.GroupId, command);
+
+                    if (usrCmd != null)
+                    {
+                        if (cmd.Limit < usrCmd.TimesUsed)
+                        {
+
+                            client.SendChatMessage("Server", "You have reached the limit for this command!");
+
+                            return true;
+
+                        }
+                    }
+
+                }
+
+            }
+
+            return base.OnChatCommandReceived(client, command, args);
+
+        }
+
         public static void KickBanPlayer(StarboundServerClient kickBanner, List<StarboundServerClient> players, bool ban = false)
         {
 

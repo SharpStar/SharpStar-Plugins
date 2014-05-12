@@ -6,17 +6,17 @@ using SQLite;
 
 namespace EssentialCommandsPlugin
 {
-    public class EssentialCommandsGroup
+    public class EssentialCommandsUserCommand
     {
 
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        public int GroupId { get; set; }
+        public int UserId { get; set; }
 
-        public string Prefix { get; set; }
+        public int CommandId { get; set; }
 
-        public int? ProtectedPlanetLimit { get; set; }
+        public int TimesUsed { get; set; }
 
     }
 }

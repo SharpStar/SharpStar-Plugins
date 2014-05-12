@@ -58,7 +58,7 @@ namespace EssentialCommandsPlugin.Commands
 
             foreach (EssentialCommandsGroup group in Groups)
             {
-                if (client.Server.Player.Name.IndexOf(group.Prefix, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!string.IsNullOrEmpty(group.Prefix) && client.Server.Player.Name.IndexOf(group.Prefix, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     crp.Success = false;
                     crp.RejectionReason = "Your player name is invalid!";
@@ -290,6 +290,95 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
+        [Command("setgroupcmdlimit")]
+        [CommandPermission("permissions")]
+        public void SetGroupCommandLimit(StarboundClient client, string[] args)
+        {
+
+            if (!EssentialCommands.CanUserAccess(client, "setgroupcmdlimit"))
+                return;
+
+            if (args.Length < 3)
+            {
+
+                client.SendChatMessage("Server", "Syntax: /setgroupcmdlimit <group name> <command name> <limit>");
+
+                return;
+
+            }
+
+            SharpStarGroup group = SharpStarMain.Instance.Database.GetGroup(args[0]);
+
+            if (group == null)
+            {
+
+                client.SendChatMessage("Server", "Group does not exist!");
+
+                return;
+
+            }
+
+            int limit;
+
+            if (!int.TryParse(args[2], out limit))
+            {
+
+                client.SendChatMessage("Server", "Invalid limit!");
+
+                return;
+
+            }
+
+            EssentialCommandsCommand cmd = EssentialCommands.Database.AddCommand(group.Id, args[1], limit);
+
+            if (cmd != null)
+            {
+                EssentialCommands.Database.SetCommandLimit(group.Id, args[1], limit);
+            }
+
+            client.SendChatMessage("Server", "Limit set!");
+
+        }
+
+        [Command("delgroupcmdlimit")]
+        [CommandPermission("permissions")]
+        public void RemoveGroupCommandLimit(StarboundClient client, string[] args)
+        {
+
+            if (!EssentialCommands.CanUserAccess(client, "delgroupcmdlimit"))
+                return;
+
+            if (args.Length < 2)
+            {
+
+                client.SendChatMessage("Server", "Syntax: /delgroupcmdlimit <group name> <command name>");
+
+                return;
+
+            }
+
+            SharpStarGroup group = SharpStarMain.Instance.Database.GetGroup(args[0]);
+
+            if (group == null)
+            {
+
+                client.SendChatMessage("Server", "Group does not exist!");
+
+                return;
+
+            }
+
+            if (EssentialCommands.Database.SetCommandLimit(group.Id, args[1], null))
+            {
+                client.SendChatMessage("Server", "Limit removed!");
+            }
+            else
+            {
+                client.SendChatMessage("Server", "There was no limit associated with this command");
+            }
+
+        }
+
         [Command("removegroupperm", "Remove a permission from a group")]
         [CommandPermission("permissions")]
         public void RemoveGroupPermission(StarboundClient client, string[] args)
@@ -317,6 +406,85 @@ namespace EssentialCommandsPlugin.Commands
             {
                 client.SendChatMessage("Server", "Permission removed from group!");
             }
+
+        }
+
+        [Command("setplanetlimit")]
+        [CommandPermission("permissions")]
+        public void SetPlanetLimit(StarboundClient client, string[] args)
+        {
+
+            if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
+                return;
+
+            if (args.Length < 2)
+            {
+
+                client.SendChatMessage("Server", "Syntax: /setplanetlimit <group name> <limit>");
+
+                return;
+
+            }
+
+            var group = SharpStarMain.Instance.Database.GetGroup(args[0]);
+
+            if (group == null)
+            {
+
+                client.SendChatMessage("Server", "Group does not exist!");
+
+                return;
+
+            }
+
+            int limit;
+
+            if (!int.TryParse(args[1], out limit))
+            {
+
+                client.SendChatMessage("Server", "Invalid limit!");
+
+                return;
+
+            }
+
+            EssentialCommands.Database.SetGroupPlanetLimit(group.Id, limit);
+
+            client.SendChatMessage("Server", "Limit has been set!");
+
+        }
+
+        [Command("delplanetlimit")]
+        [CommandPermission("permissions")]
+        public void RemovePlanetLimit(StarboundClient client, string[] args)
+        {
+
+            if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
+                return;
+
+            if (args.Length != 1)
+            {
+
+                client.SendChatMessage("Server", "Syntax: /delplanetlimit <group name>");
+
+                return;
+
+            }
+
+            var group = SharpStarMain.Instance.Database.GetGroup(args[0]);
+
+            if (group == null)
+            {
+
+                client.SendChatMessage("Server", "Group does not exist!");
+
+                return;
+
+            }
+
+            EssentialCommands.Database.SetGroupPlanetLimit(group.Id, null);
+
+            client.SendChatMessage("Server", "Limit has been removed!");
 
         }
 
@@ -380,7 +548,17 @@ namespace EssentialCommandsPlugin.Commands
 
             SharpStarUser user = SharpStarMain.Instance.Database.GetUser(args[0]);
 
+            if (user == null)
+            {
+
+                client.SendChatMessage("Server", "User does not exist!");
+
+                return;
+
+            }
+
             SharpStarMain.Instance.Database.ChangeUserGroup(user.Id, group.Id);
+            EssentialCommands.Database.RemoveUserCommmands(user.Id);
 
             client.SendChatMessage("Server", "User group changed!");
 

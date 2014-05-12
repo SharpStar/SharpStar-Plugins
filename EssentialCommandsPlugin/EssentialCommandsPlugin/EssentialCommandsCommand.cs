@@ -6,7 +6,7 @@ using SQLite;
 
 namespace EssentialCommandsPlugin
 {
-    public class EssentialCommandsGroup
+    public class EssentialCommandsCommand
     {
 
         [PrimaryKey, AutoIncrement]
@@ -14,9 +14,9 @@ namespace EssentialCommandsPlugin
 
         public int GroupId { get; set; }
 
-        public string Prefix { get; set; }
+        public string Command { get; set; }
 
-        public int? ProtectedPlanetLimit { get; set; }
+        public int? Limit { get; set; }
 
     }
 }
