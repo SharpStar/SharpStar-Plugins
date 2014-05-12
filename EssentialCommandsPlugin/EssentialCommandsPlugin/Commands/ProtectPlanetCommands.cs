@@ -302,8 +302,12 @@ namespace EssentialCommandsPlugin.Commands
                         if (builder == null && planets.Key.OwnerId != client.Server.Player.UserAccount.Id)
                         {
 
-                            if (p == KnownPacket.EntityCreate && !EssentialCommands.Config.ConfigFile.AllowProjectiles)
+                            if (p == KnownPacket.EntityCreate)
                             {
+
+                                if (EssentialCommands.Config.ConfigFile.AllowProjectiles)
+                                    return;
+
                                 var ec = (EntityCreatePacket)packet;
 
                                 foreach (Entity ent in ec.Entities.Where(x => x.EntityType == EntityType.Projectile))
@@ -343,11 +347,15 @@ namespace EssentialCommandsPlugin.Commands
 
                             if (p == KnownPacket.EntityCreate)
                             {
+
+                                if (EssentialCommands.Config.ConfigFile.AllowProjectiles)
+                                    return;
+
                                 var ec = (EntityCreatePacket)packet;
 
-                                foreach (Entity ent in ec.Entities.Where(x => x.EntityType == EntityType.Projectile))
+                                foreach (Entity ent in ec.Entities)
                                 {
-                                    if (p == KnownPacket.EntityCreate && !EssentialCommands.Config.ConfigFile.AllowProjectiles)
+                                    if (ent.EntityType == EntityType.Projectile)
                                     {
 
                                         ProjectileEntity pent = (ProjectileEntity)ent;
