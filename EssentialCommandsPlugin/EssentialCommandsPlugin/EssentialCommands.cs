@@ -4,11 +4,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using EssentialCommandsPlugin.Attributes;
 using EssentialCommandsPlugin.Commands;
+using EssentialCommandsPlugin.ConsoleCommands;
 using Mono.Addins;
 using SharpStar.Lib;
+using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Database;
+using SharpStar.Lib.Logging;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
@@ -23,6 +25,8 @@ namespace EssentialCommandsPlugin
     public class EssentialCommands : CSPlugin
     {
 
+        private static readonly object _commandLocker = new object();
+
         public static EssentialCommandsConfig Config;
 
         private const string DatabaseName = "essentialcommands.db";
@@ -32,6 +36,10 @@ namespace EssentialCommandsPlugin
         public static readonly EssentialCommandsDb Database = new EssentialCommandsDb(DatabaseName);
 
         public static readonly List<Tuple<string, string, string, bool>> Commands;
+
+        public static readonly Dictionary<string, string> ConsoleCommands;
+
+        public static readonly SharpStarLogger Logger = new SharpStarLogger("Essentials");
 
         #region Commands
 
@@ -57,6 +65,7 @@ namespace EssentialCommandsPlugin
         static EssentialCommands()
         {
             Commands = new List<Tuple<string, string, string, bool>>();
+            ConsoleCommands = new Dictionary<string, string>();
         }
 
 
@@ -65,44 +74,65 @@ namespace EssentialCommandsPlugin
             get { return "Essential Commands"; }
         }
 
-        public override void OnLoad()
+        public override void OnPluginLoaded(ICSPlugin plugin)
         {
+            RefreshCommands();
+        }
 
-            Config = new EssentialCommandsConfig(ConfigFileName);
-            Config.Save();
+        public override void OnPluginUnloaded(ICSPlugin plugin)
+        {
+            RefreshCommands();
+        }
 
-            Commands.Clear();
-
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            foreach (Assembly assm in assemblies)
+        private void RefreshCommands()
+        {
+            lock (_commandLocker)
             {
+                Commands.Clear();
+                ConsoleCommands.Clear();
 
-                Type[] types = assm.GetTypes();
+                var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-                foreach (Type type in types)
+                foreach (Assembly assm in assemblies.Where(p => p.GetTypes().Any(x => typeof(ICSPlugin).IsAssignableFrom(x))))
                 {
 
-                    foreach (MethodInfo mi in type.GetMethods())
+                    Type[] types = assm.GetTypes();
+
+                    foreach (Type type in types)
                     {
 
-                        var cmdAttribs = mi.GetCustomAttributes(typeof(CommandAttribute), false).ToList();
-                        var permAttribs = mi.GetCustomAttributes(typeof(CommandPermissionAttribute), false).ToList();
-
-                        if (cmdAttribs.Count == 1)
+                        foreach (MethodInfo mi in type.GetMethods())
                         {
 
-                            CommandAttribute cmdAttrib = (CommandAttribute)cmdAttribs[0];
+                            var cmdAttribs = mi.GetCustomAttributes(typeof(CommandAttribute), false).ToList();
+                            var consoleCmdAttribs = mi.GetCustomAttributes(typeof(ConsoleCommandAttribute), false).ToList();
 
-                            if (permAttribs.Count == 1)
+                            if (consoleCmdAttribs.Count == 1)
                             {
-                                CommandPermissionAttribute permAttrib = (CommandPermissionAttribute)permAttribs[0];
 
-                                Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, permAttrib.Permission, permAttrib.Admin));
+                                ConsoleCommandAttribute cCmdAttr = (ConsoleCommandAttribute)cmdAttribs[0];
+
+                                ConsoleCommands.Add(cCmdAttr.CommandName, cCmdAttr.CommandDescription);
+
                             }
-                            else
+                            else if (cmdAttribs.Count == 1)
                             {
-                                Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, String.Empty, false));
+
+                                var permAttribs = mi.GetCustomAttributes(typeof(CommandPermissionAttribute), false).ToList();
+
+                                CommandAttribute cmdAttrib = (CommandAttribute)cmdAttribs[0];
+
+                                if (permAttribs.Count == 1)
+                                {
+                                    CommandPermissionAttribute permAttrib = (CommandPermissionAttribute)permAttribs[0];
+
+                                    Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, permAttrib.Permission, permAttrib.Admin));
+                                }
+                                else
+                                {
+                                    Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, String.Empty, false));
+                                }
+
                             }
 
                         }
@@ -110,8 +140,16 @@ namespace EssentialCommandsPlugin
                     }
 
                 }
-
             }
+        }
+
+        public override void OnLoad()
+        {
+
+            RefreshCommands();
+
+            Config = new EssentialCommandsConfig(ConfigFileName);
+            Config.Save();
 
             RegisterCommandObject(_makeRemoveAdmin);
             RegisterCommandObject(_kickCommand);
@@ -129,6 +167,8 @@ namespace EssentialCommandsPlugin
             RegisterCommandObject(_spawnCommands);
             RegisterCommandObject(_planetProtect);
             RegisterCommandObject(_helpCommand);
+
+            RegisterConsoleCommandObject(new HelpConsoleCommand());
 
             RegisterEventObject(_banCommand);
             RegisterEventObject(_motdCommands);

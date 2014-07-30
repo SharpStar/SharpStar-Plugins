@@ -1,6 +1,6 @@
 ﻿using System;
-using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
+using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 

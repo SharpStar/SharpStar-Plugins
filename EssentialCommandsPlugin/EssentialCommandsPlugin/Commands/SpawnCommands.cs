@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EssentialCommandsPlugin.Attributes;
+using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 

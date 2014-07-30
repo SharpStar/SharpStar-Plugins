@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
+using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Database;
 using SharpStar.Lib.Entities;
 using SharpStar.Lib.Misc;

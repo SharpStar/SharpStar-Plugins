@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EssentialCommandsPlugin.Attributes;
 using SharpStar.Lib;
+using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
