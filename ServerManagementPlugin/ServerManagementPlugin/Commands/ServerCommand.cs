@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SharpStar.Lib;
+using SharpStar.Lib.Attributes;
+using SharpStar.Lib.Extensions;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
@@ -12,10 +14,13 @@ namespace ServerManagementPlugin.Commands
 {
     public class ServerCommand
     {
-
+        [CommandPermission("server")]
         [Command("server", "Server Management")]
         public void Server(StarboundClient client, string[] args)
         {
+
+            if (!client.CanUserAccess("server", true))
+                return;
 
             if (args.Length == 0)
             {

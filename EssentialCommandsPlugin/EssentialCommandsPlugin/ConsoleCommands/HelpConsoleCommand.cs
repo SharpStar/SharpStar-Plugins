@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using SharpStar.Lib;
 using SharpStar.Lib.Logging;
 using SharpStar.Lib.Plugins;
 
@@ -17,7 +18,7 @@ namespace EssentialCommandsPlugin.ConsoleCommands
         {
             Logger.Info("-- List of Commands --");
 
-            foreach (var cmd in EssentialCommands.ConsoleCommands)
+            foreach (var cmd in SharpStarMain.Instance.PluginManager.CSPluginManager.ConsoleCommands)
             {
                 Logger.Info("Command: {0} - {1}", cmd.Key, cmd.Value);
             }

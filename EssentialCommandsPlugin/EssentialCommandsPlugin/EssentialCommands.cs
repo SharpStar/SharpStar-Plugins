@@ -10,6 +10,7 @@ using Mono.Addins;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Database;
+using SharpStar.Lib.Extensions;
 using SharpStar.Lib.Logging;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
@@ -25,8 +26,6 @@ namespace EssentialCommandsPlugin
     public class EssentialCommands : CSPlugin
     {
 
-        private static readonly object _commandLocker = new object();
-
         public static EssentialCommandsConfig Config;
 
         private const string DatabaseName = "essentialcommands.db";
@@ -34,10 +33,6 @@ namespace EssentialCommandsPlugin
         private const string ConfigFileName = "essentialcommands.json";
 
         public static readonly EssentialCommandsDb Database = new EssentialCommandsDb(DatabaseName);
-
-        public static readonly List<Tuple<string, string, string, bool>> Commands;
-
-        public static readonly Dictionary<string, string> ConsoleCommands;
 
         public static readonly SharpStarLogger Logger = new SharpStarLogger("Essentials");
 
@@ -62,91 +57,14 @@ namespace EssentialCommandsPlugin
 
         #endregion
 
-        static EssentialCommands()
-        {
-            Commands = new List<Tuple<string, string, string, bool>>();
-            ConsoleCommands = new Dictionary<string, string>();
-        }
-
-
         public override string Name
         {
             get { return "Essential Commands"; }
         }
 
-        public override void OnPluginLoaded(ICSPlugin plugin)
-        {
-            RefreshCommands();
-        }
-
-        public override void OnPluginUnloaded(ICSPlugin plugin)
-        {
-            RefreshCommands();
-        }
-
-        private void RefreshCommands()
-        {
-            lock (_commandLocker)
-            {
-                Commands.Clear();
-                ConsoleCommands.Clear();
-
-                var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-                foreach (Assembly assm in assemblies.Where(p => p.GetTypes().Any(x => typeof(ICSPlugin).IsAssignableFrom(x))))
-                {
-
-                    Type[] types = assm.GetTypes();
-
-                    foreach (Type type in types)
-                    {
-
-                        foreach (MethodInfo mi in type.GetMethods())
-                        {
-
-                            var cmdAttribs = mi.GetCustomAttributes(typeof(CommandAttribute), false).ToList();
-                            var consoleCmdAttribs = mi.GetCustomAttributes(typeof(ConsoleCommandAttribute), false).ToList();
-
-                            if (consoleCmdAttribs.Count == 1)
-                            {
-
-                                ConsoleCommandAttribute cCmdAttr = (ConsoleCommandAttribute)cmdAttribs[0];
-
-                                ConsoleCommands.Add(cCmdAttr.CommandName, cCmdAttr.CommandDescription);
-
-                            }
-                            else if (cmdAttribs.Count == 1)
-                            {
-
-                                var permAttribs = mi.GetCustomAttributes(typeof(CommandPermissionAttribute), false).ToList();
-
-                                CommandAttribute cmdAttrib = (CommandAttribute)cmdAttribs[0];
-
-                                if (permAttribs.Count == 1)
-                                {
-                                    CommandPermissionAttribute permAttrib = (CommandPermissionAttribute)permAttribs[0];
-
-                                    Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, permAttrib.Permission, permAttrib.Admin));
-                                }
-                                else
-                                {
-                                    Commands.Add(Tuple.Create(cmdAttrib.CommandName, cmdAttrib.CommandDescription, String.Empty, false));
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-            }
-        }
 
         public override void OnLoad()
         {
-
-            RefreshCommands();
 
             Config = new EssentialCommandsConfig(ConfigFileName);
             Config.Save();
@@ -269,30 +187,12 @@ namespace EssentialCommandsPlugin
 
         public static bool IsAdmin(StarboundClient client)
         {
-            return client.Server.Player.UserAccount != null && client.Server.Player.UserAccount.IsAdmin;
+            return client.IsAdmin();
         }
 
         public static bool CanUserAccess(StarboundClient client, string command, bool sendMsg = true)
         {
-
-            if (IsAdmin(client))
-                return true;
-
-            var cmd = Commands.Single(p => p.Item1 == command);
-
-            if (cmd == null || cmd.Item4)
-                return false;
-
-            if (string.IsNullOrEmpty(cmd.Item3))
-                return true;
-
-            bool hasPerm = client.Server.Player.HasPermission(cmd.Item3);
-
-            if (!hasPerm && sendMsg)
-                client.SendChatMessage("Server", "You do not have permission to use this command!");
-
-            return hasPerm;
-
+            return client.CanUserAccess(command, sendMsg);
         }
 
     }
