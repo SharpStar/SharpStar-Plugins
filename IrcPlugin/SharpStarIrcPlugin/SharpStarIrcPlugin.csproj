@@ -58,7 +58,10 @@
   <ItemGroup>
     <Compile Include="Commands\IsOnlineCommand.cs" />
     <Compile Include="Commands\KickCommand.cs" />
+    <Compile Include="Commands\RestartServerCommand.cs" />
     <Compile Include="Commands\SayCommand.cs" />
+    <Compile Include="Commands\StartServerCommand.cs" />
+    <Compile Include="Commands\StopServerCommand.cs" />
     <Compile Include="Commands\WhoCommand.cs" />
     <Compile Include="IrcChannel.cs" />
     <Compile Include="IrcCommand.cs" />

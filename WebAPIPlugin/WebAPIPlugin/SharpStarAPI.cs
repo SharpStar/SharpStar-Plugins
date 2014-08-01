@@ -22,15 +22,18 @@ namespace WebAPIPlugin
             Get["/players"] = p =>
             {
 
-                var players = SharpStarMain.Instance.Server.Clients.Where(x => x.Player != null).Select(x => x.Player);
+                var clients = SharpStarMain.Instance.Server.Clients.Where(x => x.Player != null);
 
                 var apiPlayers = new List<APIStarboundPlayer>();
 
-                foreach (StarboundPlayer player in players)
+                foreach (StarboundServerClient client in clients)
                 {
+
+                    StarboundPlayer player = client.Player;
 
                     APIStarboundPlayer retPlayer = new APIStarboundPlayer();
                     retPlayer.Name = player.Name;
+                    retPlayer.TimeJoined = client.ConnectionTime;
 
                     if (player.UserAccount != null)
                     {
@@ -112,12 +115,12 @@ namespace WebAPIPlugin
             {
 
                 string username = Request.Form.Username;
-                int groupId = Request.Form.GroupId;
+                int? groupId = Request.Form.GroupId;
 
-                if (string.IsNullOrEmpty(username))
-                    return Response.AsJson(new APIResult(false, "A username is required!", 1));
+                if (string.IsNullOrEmpty(username) || !groupId.HasValue)
+                    return Response.AsJson(new APIResult(false, "A username and group id is required!", 1));
 
-                if (!SharpStarMain.Instance.Database.ChangeUserGroup(username, groupId))
+                if (!SharpStarMain.Instance.Database.ChangeUserGroup(username, groupId.Value))
                     return Response.AsJson(new APIResult(false, "An error occurred while changing the user's group!", 2));
 
                 return Response.AsJson(new APIResult(true));

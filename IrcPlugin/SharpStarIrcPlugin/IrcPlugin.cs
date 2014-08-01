@@ -52,6 +52,9 @@ namespace SharpStarIrcPlugin
             Commands.Add(new WhoCommand());
             Commands.Add(new IsOnlineCommand());
             Commands.Add(new KickCommand());
+            Commands.Add(new StartServerCommand());
+            Commands.Add(new StopServerCommand());
+            Commands.Add(new RestartServerCommand());
 
             QueryCommands = new List<IrcCommand>();
             QueryCommands.Add(new LoginCommand());

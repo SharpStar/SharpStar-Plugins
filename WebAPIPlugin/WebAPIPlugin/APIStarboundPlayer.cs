@@ -12,5 +12,7 @@ namespace WebAPIPlugin
 
         public string AccountName { get; set; }
 
+        public DateTime TimeJoined { get; set; }
+
     }
 }
