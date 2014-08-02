@@ -18,7 +18,7 @@ using SharpStar.Lib.Logging;
 using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 
-[assembly: Addin("ServerManagement", Version = "1.0")]
+[assembly: Addin("ServerManagement", Version = "1.0.1")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 namespace ServerManagementPlugin
@@ -65,9 +65,19 @@ namespace ServerManagementPlugin
                     if (!serverOnline && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested)
                     {
                         if (GetStarboundProcess() != null)
+                        {
                             RestartServer();
+
+                            Logger.Error("The Starbound server did not respond after a certain period of time. Restarting the server...");
+                        }
                         else
+                        {
+
+                            Logger.Error("Server instance not found. Starting it up!");
+
                             StartServer();
+
+                        }
                     }
                     else if (serverOnline)
                     {

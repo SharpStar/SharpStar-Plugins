@@ -9,6 +9,7 @@ using WebAPIPlugin.Config;
 
 [assembly: Addin("WebAPI", Version = "1.0")]
 [assembly: AddinDescription("A Web API for SharpStar")]
+[assembly :ImportAddinAssembly("Nancy.dll")]
 [assembly: ImportAddinAssembly("Nancy.Hosting.Self.dll")]
 [assembly: ImportAddinAssembly("Nancy.Authentication.Stateless.dll")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]

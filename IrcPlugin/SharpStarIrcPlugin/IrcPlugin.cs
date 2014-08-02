@@ -8,13 +8,14 @@ using Meebey.SmartIrc4net;
 using Mono.Addins;
 using SharpStar.Lib;
 using SharpStar.Lib.Database;
+using SharpStar.Lib.Logging;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 using SharpStarIrcPlugin.Commands;
 using SharpStarIrcPlugin.QueryCommands;
 
-[assembly: Addin("Irc", Version = "1.0")]
+[assembly: Addin("Irc", Version = "1.0.1")]
 [assembly: AddinDescription("An IRC plugin for SharpStar")]
 [assembly: ImportAddinAssembly("Meebey.SmartIrc4net.dll")]
 [assembly: ImportAddinAssembly("StarkSoftProxy.dll")]
@@ -27,6 +28,8 @@ namespace SharpStarIrcPlugin
     {
 
         private const string DefaultConfigFile = "ircplugin.json";
+
+        private readonly object _locker = new object();
 
         private volatile bool _running;
 
@@ -100,15 +103,60 @@ namespace SharpStarIrcPlugin
 
             }
 
+
+            SharpStarLogger.AllLogOutput += SharpStarLogger_AllLogOutput;
+
         }
 
         public override void OnUnload()
         {
 
+            SharpStarLogger.AllLogOutput -= SharpStarLogger_AllLogOutput;
+
             _running = false;
 
             if (_ircThread != null)
                 _ircThread.Abort(); //TODO: figure out a way to avoid this
+
+        }
+
+        private void SharpStarLogger_AllLogOutput(object sender, SharpStarLogEventArgs e)
+        {
+
+            IrcConfigFile cf = Config.Config;
+
+            lock (_locker)
+            {
+                if (Irc != null && Irc.IsConnected)
+                {
+
+                    foreach (IrcChannel channel in cf.Channels)
+                    {
+
+                        if (Irc.GetChannel(channel.Channel) != null)
+                        {
+                            if (channel.EnableDebugOutput && e.LogType == LogType.Debug)
+                            {
+                                Irc.SendMessage(SendType.Message, channel.Channel, String.Format("{0}{1}Debug{0}: {2}", IrcConstants.IrcColor, (int)IrcColors.LightGrey, e.Message));
+                            }
+                            else if (channel.EnableInfoOutput && e.LogType == LogType.Info)
+                            {
+                                Irc.SendMessage(SendType.Message, channel.Channel, String.Format("{0}{1}Info{0}: {2}", IrcConstants.IrcColor, (int)IrcColors.LightBlue, e.Message));
+                            }
+                            else if (channel.EnableWarningOuput && e.LogType == LogType.Warn)
+                            {
+                                Irc.SendMessage(SendType.Message, channel.Channel, String.Format("{0}{1}Warn{0}: {2}", IrcConstants.IrcColor, (int)IrcColors.Yellow, e.Message));
+                            }
+                            else if (channel.EnableErrorOutput && e.LogType == LogType.Error)
+                            {
+                                Irc.SendMessage(SendType.Message, channel.Channel, String.Format("{0}{1}Error{0}: {2}", IrcConstants.IrcColor, (int)IrcColors.LightRed, e.Message));
+                            }
+                        }
+
+                    }
+
+                }
+            }
 
         }
 

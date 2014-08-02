@@ -51,6 +51,7 @@ namespace SharpStarIrcPlugin
             if (File.Exists(FileName))
             {
                 Config = JsonConvert.DeserializeObject<IrcConfigFile>(File.ReadAllText(FileName));
+                Save();
             }
             else
             {
