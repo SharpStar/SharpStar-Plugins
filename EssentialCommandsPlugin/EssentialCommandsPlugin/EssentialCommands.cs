@@ -17,7 +17,8 @@ using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 using Timer = System.Timers.Timer;
 
-[assembly: Addin]
+[assembly: Addin("EssentialCommands", Version = "1.0")]
+[assembly: AddinDescription("A command plugin that is essential")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
 namespace EssentialCommandsPlugin

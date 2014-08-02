@@ -7,7 +7,10 @@ using Nancy.Hosting.Self;
 using SharpStar.Lib.Plugins;
 using WebAPIPlugin.Config;
 
-[assembly: Addin]
+[assembly: Addin("WebAPI", Version = "1.0")]
+[assembly: AddinDescription("A Web API for SharpStar")]
+[assembly: ImportAddinAssembly("Nancy.Hosting.Self.dll")]
+[assembly: ImportAddinAssembly("Nancy.Authentication.Stateless.dll")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 namespace WebAPIPlugin
 {

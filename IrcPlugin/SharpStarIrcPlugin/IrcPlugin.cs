@@ -14,7 +14,10 @@ using SharpStar.Lib.Server;
 using SharpStarIrcPlugin.Commands;
 using SharpStarIrcPlugin.QueryCommands;
 
-[assembly: Addin]
+[assembly: Addin("Irc", Version = "1.0")]
+[assembly: AddinDescription("An IRC plugin for SharpStar")]
+[assembly: ImportAddinAssembly("Meebey.SmartIrc4net.dll")]
+[assembly: ImportAddinAssembly("StarkSoftProxy.dll")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
 namespace SharpStarIrcPlugin
@@ -166,7 +169,7 @@ namespace SharpStarIrcPlugin
                     Irc.RfcQuit("Goodbye.");
                     Irc.Disconnect();
                 }
-            
+
             }
 
         }
