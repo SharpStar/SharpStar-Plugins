@@ -49,32 +49,46 @@ namespace ServerManagementPlugin.ConsoleCommands
 
                 case "restart":
 
-                    Task.Factory.StartNew(() =>
+                     int restartIn = 0;
+
+                    if (args.Length == 2)
                     {
+                        int.TryParse(args[1], out restartIn);
+                    }
 
-                        if (!string.IsNullOrEmpty(ServerManagement.Config.ConfigFile.ServerRestartMessage))
+                    if (restartIn > 0)
+                    {
+                        Task.Factory.StartNew(() =>
                         {
-                            foreach (StarboundServerClient client in SharpStarMain.Instance.Server.Clients)
+
+                            if (!string.IsNullOrEmpty(ServerManagement.Config.ConfigFile.ServerRestartMessage))
                             {
-                                client.PlayerClient.SendChatMessage("Server", ServerManagement.Config.ConfigFile.ServerRestartMessage);
+                                foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                {
+                                    cl.PlayerClient.SendChatMessage("Server", ServerManagement.Config.ConfigFile.ServerRestartMessage);
+                                }
                             }
-                        }
 
-                        Logger.Info("Restarting in:");
+                            Logger.Info("Restarting in:");
 
-                        for (int i = 0; i < 5; i++)
-                        {
-                            Thread.Sleep(1000); //1 second
-
-                            Logger.Info((5 - i) + "...");
-
-                            foreach (StarboundServerClient client in SharpStarMain.Instance.Server.Clients)
+                            for (int i = 0; i < restartIn; i++)
                             {
-                                client.PlayerClient.SendChatMessage("Server", (5 - i) + "...");
-                            }
-                        }
+                                Thread.Sleep(1000); //1 second
 
-                    }).ContinueWith(t => ServerManagement.RestartServer());
+                                Logger.Info((restartIn - i) + "...");
+
+                                foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                {
+                                    cl.PlayerClient.SendChatMessage("Server", (restartIn - i) + "...");
+                                }
+                            }
+
+                        }).ContinueWith(t => ServerManagement.RestartServer());
+                    }
+                    else
+                    {
+                        ServerManagement.RestartServer();
+                    }
 
                     break;
 

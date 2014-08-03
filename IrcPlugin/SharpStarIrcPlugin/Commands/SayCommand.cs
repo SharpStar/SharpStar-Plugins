@@ -26,14 +26,14 @@ namespace SharpStarIrcPlugin.Commands
             {
                 try
                 {
-                    ssc.PlayerClient.SendChatMessage("IRC", message);
+                    ssc.PlayerClient.SendChatMessage(nick, message);
                 }
                 catch (Exception)
                 {
                 }
             }
 
-            plugin.Irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0}: {2}", IrcConstants.IrcBold, "IRC", message));
+            plugin.Irc.SendMessage(SendType.Message, channel, String.Format("{0}{1}{0}: {2}", IrcConstants.IrcBold, nick, message));
 
         }
     }
