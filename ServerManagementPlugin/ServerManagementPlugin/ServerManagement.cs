@@ -18,7 +18,7 @@ using SharpStar.Lib.Logging;
 using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 
-[assembly: Addin("ServerManagement", Version = "1.0.2")]
+[assembly: Addin("ServerManagement", Version = "1.0.3")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 namespace ServerManagementPlugin
