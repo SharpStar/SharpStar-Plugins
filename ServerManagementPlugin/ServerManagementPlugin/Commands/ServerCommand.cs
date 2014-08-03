@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Extensions;
+using SharpStar.Lib.Logging;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
@@ -14,6 +15,9 @@ namespace ServerManagementPlugin.Commands
 {
     public class ServerCommand
     {
+
+        private static readonly SharpStarLogger Logger = ServerManagement.Logger;
+
         [CommandPermission("server")]
         [Command("server", "Server Management")]
         public void Server(StarboundClient client, string[] args)
@@ -61,13 +65,51 @@ namespace ServerManagementPlugin.Commands
                                 }
                             }
 
+                            Logger.Info("Restarting in:");
+
                             for (int i = 0; i < restartIn; i++)
                             {
                                 Thread.Sleep(1000); //1 second
 
-                                foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                TimeSpan ts2 = TimeSpan.FromSeconds(restartIn - i);
+
+                                int interval;
+                                if (ts2.TotalMinutes <= 1)
+                                    interval = 5;
+                                else if (ts2.TotalMinutes <= 5)
+                                    interval = 5 * 6;
+                                else if (ts2.TotalHours <= 5)
+                                    interval = 5 * 60;
+                                else if (ts2.TotalDays <= 5)
+                                    interval = 5 * 60 * 60;
+                                else
+                                    interval = 5 * 60 * 60 * 24;
+
+                                if (restartIn - i <= 5 || i % interval == 0)
                                 {
-                                    cl.PlayerClient.SendChatMessage("Server", (restartIn - i) + "...");
+
+                                    if (ts2.TotalMinutes <= 1)
+                                        Logger.Info(ts2.TotalSeconds + " seconds until restart...");
+                                    else if (ts2.TotalHours <= 1)
+                                        Logger.Info(ts2.TotalMinutes + " minutes until restart...");
+                                    else if (ts2.TotalDays <= 1)
+                                        Logger.Info(ts2.TotalHours + " hours until restart...");
+                                    else
+                                        Logger.Info(ts2.TotalDays + " days until restart...");
+
+                                    foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                    {
+
+                                        if (ts2.TotalMinutes <= 1)
+                                            cl.PlayerClient.SendChatMessage("Server", ts2.TotalSeconds + " seconds until restart...");
+                                        else if (ts2.TotalHours <= 1)
+                                            cl.PlayerClient.SendChatMessage("Server", ts2.TotalMinutes + " minutes until restart...");
+                                        else if (ts2.TotalDays <= 1)
+                                            cl.PlayerClient.SendChatMessage("Server", ts2.TotalHours + " hours until restart...");
+                                        else
+                                            cl.PlayerClient.SendChatMessage("Server", ts2.TotalDays + " days until restart...");
+
+                                    }
                                 }
                             }
 

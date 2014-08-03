@@ -72,7 +72,6 @@ namespace ServerManagementPlugin
                         }
                         else
                         {
-
                             Logger.Error("Server instance not found. Starting it up!");
 
                             StartServer();
@@ -109,7 +108,14 @@ namespace ServerManagementPlugin
 
             try
             {
-                socket.Connect(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Server.ServerPort);
+
+                string bind = SharpStarMain.Instance.Config.ConfigFile.StarboundBind;
+
+                if (string.IsNullOrEmpty(bind))
+                    socket.Connect(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Server.ServerPort);
+                else
+                    socket.Connect(bind, SharpStarMain.Instance.Server.ServerPort);
+
             }
             catch (Exception)
             {

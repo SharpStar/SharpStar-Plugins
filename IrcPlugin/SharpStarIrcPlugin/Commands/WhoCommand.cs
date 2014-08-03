@@ -41,8 +41,10 @@ namespace SharpStarIrcPlugin.Commands
 
             foreach (var cl in clients)
             {
-                if (cl.Player != null)
-                    plugin.Irc.SendMessage(SendType.Message, channel, cl.Player.Name);
+                if (cl.Player != null && cl.Player.UserAccount != null)
+                    plugin.Irc.SendMessage(SendType.Message, channel, String.Format("{0} ({1})", cl.Player.Name, cl.Player.UserAccount.Username));
+                else if (cl.Player != null)
+                    plugin.Irc.SendMessage(SendType.Message, channel, String.Format("{0}", cl.Player.Name));
             }
 
             plugin.Irc.SendMessage(SendType.Message, channel, String.Format("Page {0}{1}{0} of {0}{2}{0}", IrcConstants.IrcBold, page, (int)Math.Ceiling(((double)SharpStarMain.Instance.Server.Clients.Count / 5))));

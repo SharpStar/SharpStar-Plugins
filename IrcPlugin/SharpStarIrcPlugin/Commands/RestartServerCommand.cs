@@ -39,7 +39,14 @@ namespace SharpStarIrcPlugin.Commands
                         return;
                     }
 
-                    SharpStarMain.Instance.PluginManager.PassConsoleCommand("server", new[] { "restart" });
+                    if (args.Length == 0)
+                    {
+                        SharpStarMain.Instance.PluginManager.PassConsoleCommand("server", new[] { "restart" });
+                    }
+                    else
+                    {
+                        SharpStarMain.Instance.PluginManager.PassConsoleCommand("server", new[] { "restart" }.Union(args).ToArray());
+                    }
 
                     plugin.Irc.SendMessage(SendType.Message, channel, "Restarting Starbound server....");
 
