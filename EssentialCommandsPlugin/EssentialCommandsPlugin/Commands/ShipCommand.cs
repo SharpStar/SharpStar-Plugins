@@ -57,7 +57,7 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", "Your ship is now private!");
 
-                    foreach (var cl in SharpStarMain.Instance.Server.Clients)
+                    foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
                     {
                         if (!string.IsNullOrEmpty(cl.Player.PlayerShip) && cl.Player.PlayerShip.Equals(client.Server.Player.Name, StringComparison.OrdinalIgnoreCase))
                         {
@@ -131,7 +131,7 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", String.Format("The user {0} is no longer allowed on your ship!", args[1]));
 
-                    foreach (var cl in SharpStarMain.Instance.Server.Clients)
+                    foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
                     {
                         if (!string.IsNullOrEmpty(cl.Player.PlayerShip) && cl.Player.PlayerShip.Equals(client.Server.Player.Name, StringComparison.OrdinalIgnoreCase))
                         {
@@ -168,7 +168,7 @@ namespace EssentialCommandsPlugin.Commands
 
                 string playerName = wcp.Player;
 
-                var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
+                var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
 
                 foreach (var plr in players)
                 {

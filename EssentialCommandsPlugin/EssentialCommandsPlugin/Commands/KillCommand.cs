@@ -32,7 +32,7 @@ namespace EssentialCommandsPlugin.Commands
 
             string playerName = string.Join(" ", args);
 
-            var playerClient = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player.Name.Equals(playerName));
+            var playerClient = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player != null && p.Player.Name.Equals(playerName));
 
             if (playerClient == null)
             {

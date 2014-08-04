@@ -15,9 +15,8 @@ using SharpStar.Lib.Logging;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
-using Timer = System.Timers.Timer;
 
-[assembly: Addin("EssentialCommands", Version = "1.0")]
+[assembly: Addin("EssentialCommands", Version = "1.0.2")]
 [assembly: AddinDescription("A command plugin that is essential")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
@@ -148,7 +147,7 @@ namespace EssentialCommandsPlugin
 
                 var plr = players[i];
 
-                if (!plr.Connected || !plr.PlayerClient.CheckConnection())
+                if (!plr.Connected)
                     continue;
 
                 if (!ban)

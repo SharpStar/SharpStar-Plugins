@@ -39,7 +39,7 @@ namespace EssentialCommandsPlugin.Commands
 
             string playerName = string.Join(" ", args);
 
-            var playerClient = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
+            var playerClient = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
 
             if (playerClient == null)
             {
@@ -79,7 +79,7 @@ namespace EssentialCommandsPlugin.Commands
 
             string playerName = string.Join(" ", args);
 
-            var playerClient = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
+            var playerClient = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
 
             if (playerClient == null)
             {

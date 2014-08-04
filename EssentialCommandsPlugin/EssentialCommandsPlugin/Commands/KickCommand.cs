@@ -22,7 +22,7 @@ namespace EssentialCommandsPlugin.Commands
 
             string playerName = string.Join(" ", args);
 
-            var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player.Name.Equals(playerName)).ToList();
+            var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player != null && p.Player.Name.Equals(playerName)).ToList();
 
             if (players.Count == 0)
             {

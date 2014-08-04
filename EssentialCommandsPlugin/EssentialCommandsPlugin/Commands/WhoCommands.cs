@@ -43,7 +43,7 @@ namespace EssentialCommandsPlugin.Commands
             if (args.Length == 0 || args.Length == 1)
             {
 
-                var listOfPlayers = (from p in SharpStarMain.Instance.Server.Clients
+                var listOfPlayers = (from p in SharpStarMain.Instance.Server.Clients where p.Player != null
                                      orderby p.ConnectionTime descending
                                      select new
                                      {
@@ -66,7 +66,7 @@ namespace EssentialCommandsPlugin.Commands
             {
 
                 var listOfPlayers = (from p in SharpStarMain.Instance.Server.Clients
-                                     where p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) >= 0
+                                     where p.Player != null && p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) >= 0
                                      orderby p.ConnectionTime descending
                                      select new
                                      {
@@ -130,7 +130,7 @@ namespace EssentialCommandsPlugin.Commands
             {
 
                 var listOfPlayers = (from p in SharpStarMain.Instance.Server.Clients
-                                     where p.Player.Coordinates == client.Server.Player.Coordinates
+                                     where p.Player != null && p.Player.Coordinates == client.Server.Player.Coordinates
                                      orderby p.ConnectionTime descending
                                      select new
                                      {
@@ -153,7 +153,7 @@ namespace EssentialCommandsPlugin.Commands
             {
 
                 var listOfPlayers = (from p in SharpStarMain.Instance.Server.Clients
-                                     where p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) >= 0 && p.Player.Coordinates == client.Server.Player.Coordinates
+                                     where p.Player != null && p.Player.Name.IndexOf(matchPlayers, StringComparison.OrdinalIgnoreCase) >= 0 && p.Player.Coordinates == client.Server.Player.Coordinates
                                      orderby p.ConnectionTime descending
                                      select new
                                      {

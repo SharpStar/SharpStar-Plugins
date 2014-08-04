@@ -35,7 +35,7 @@ namespace EssentialCommandsPlugin.Commands
                     timer.Elapsed += (sender, e) =>
                     {
 
-                        foreach (var cl in SharpStarMain.Instance.Server.Clients)
+                        foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
                         {
                             cl.PlayerClient.SendChatMessage("Advert", advert.AdvertMessage);
                         }
@@ -106,7 +106,7 @@ namespace EssentialCommandsPlugin.Commands
             timer.Elapsed += (sender, e) =>
             {
 
-                foreach (var cl in SharpStarMain.Instance.Server.Clients)
+                foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
                 {
                     cl.PlayerClient.SendChatMessage("Advert", advert);
                 }
@@ -221,12 +221,10 @@ namespace EssentialCommandsPlugin.Commands
                 newTimer.Interval = TimeSpan.FromMinutes(advert.Interval).TotalMilliseconds;
                 newTimer.Elapsed += (sender, e) =>
                 {
-
-                    foreach (var cl in SharpStarMain.Instance.Server.Clients)
+                    foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
                     {
                         cl.PlayerClient.SendChatMessage("Advert", advert.AdvertMessage);
                     }
-
                 };
 
                 newTimer.Start();

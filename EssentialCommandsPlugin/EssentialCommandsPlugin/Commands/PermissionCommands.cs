@@ -38,7 +38,7 @@ namespace EssentialCommandsPlugin.Commands
 
             ChatReceivedPacket csp = (ChatReceivedPacket)packet;
 
-            var plr = SharpStarMain.Instance.Server.Clients.SingleOrDefault(p => p.Player.Name == csp.Name);
+            var plr = SharpStarMain.Instance.Server.Clients.SingleOrDefault(p => p.Player != null && p.Player.Name == csp.Name);
 
             if (plr != null && plr.Player.UserGroupId.HasValue)
             {

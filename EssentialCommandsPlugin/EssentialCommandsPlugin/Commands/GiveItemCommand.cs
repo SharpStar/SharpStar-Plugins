@@ -34,7 +34,7 @@ namespace EssentialCommandsPlugin.Commands
             string countStr = args[1];
             string player = string.Join("", string.Join(" ", args.Skip(2))); //skip item, count
 
-            var plr = SharpStarMain.Instance.Server.Clients.Where(p => p.Player.Name.Equals(player, StringComparison.OrdinalIgnoreCase)).ToList();
+            var plr = SharpStarMain.Instance.Server.Clients.Where(p => p.Player != null && p.Player.Name.Equals(player, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (plr.Count == 0)
             {

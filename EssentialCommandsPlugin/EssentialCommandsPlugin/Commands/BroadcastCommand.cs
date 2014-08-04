@@ -22,7 +22,7 @@ namespace EssentialCommandsPlugin.Commands
 
             string message = string.Join(" ", args);
 
-            foreach (var cl in SharpStarMain.Instance.Server.Clients)
+            foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
             {
                 cl.PlayerClient.SendChatMessage("Broadcast", message);
             }
