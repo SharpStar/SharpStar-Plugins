@@ -18,7 +18,7 @@ using SharpStar.Lib.Logging;
 using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 
-[assembly: Addin("ServerManagement", Version = "1.0.6")]
+[assembly: Addin("ServerManagement", Version = "1.0.7")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 namespace ServerManagementPlugin
@@ -37,7 +37,9 @@ namespace ServerManagementPlugin
 
         private static volatile bool shutdownRequested;
 
-        private static readonly object shutdownLocker = new object();
+        private static volatile bool startingOrRestarting;
+
+        private static readonly object locker = new object();
 
         private Timer connTimer;
 
@@ -47,6 +49,8 @@ namespace ServerManagementPlugin
 
         public override void OnLoad()
         {
+            startingOrRestarting = false;
+
             RegisterCommandObject(new ServerCommand());
 
             RegisterConsoleCommandObject(new ServerConsoleCommand());
@@ -77,7 +81,6 @@ namespace ServerManagementPlugin
                 connTimer.Interval = TimeSpan.FromMinutes(Config.ConfigFile.ServerCheckInterval).TotalMilliseconds;
                 connTimer.Elapsed += (s, e) =>
                 {
-
                     bool serverOnline = CheckServer();
 
                     Process serverProc = GetStarboundProcess();
@@ -91,11 +94,11 @@ namespace ServerManagementPlugin
 
                     if (MonoHelper.IsRunningOnMono())
                     {
-                        startRestart = !serverOnline && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
+                        startRestart = !startingOrRestarting && !serverOnline && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
                     }
                     else
                     {
-                        startRestart = ((serverProc != null && !serverProc.Responding) || !serverOnline) && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
+                        startRestart = !startingOrRestarting && ((serverProc != null && !serverProc.Responding) || !serverOnline) && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
                     }
 
                     if (startRestart)
@@ -136,7 +139,7 @@ namespace ServerManagementPlugin
         {
             int processId = int.Parse(e.NewEvent.Properties["ProcessID"].Value.ToString());
 
-            if (processId == pid && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested)
+            if (processId == pid && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested && !startingOrRestarting)
             {
                 StartServer();
 
@@ -167,7 +170,6 @@ namespace ServerManagementPlugin
             bool toReturn;
             try
             {
-
                 string bind = SharpStarMain.Instance.Config.ConfigFile.StarboundBind;
 
                 if (string.IsNullOrEmpty(bind))
@@ -193,19 +195,16 @@ namespace ServerManagementPlugin
 
         public static Process GetStarboundProcess()
         {
-
             Process[] procs = Process.GetProcesses().Where(p => p.ProcessName.Contains("starbound_server")).ToArray();
 
             if (procs.Length == 0)
                 return null;
 
             return procs[0];
-
         }
 
         public static void StartServer()
         {
-
             string fileName = Config.ConfigFile.ServerExecutable;
 
             if (string.IsNullOrEmpty(fileName))
@@ -257,7 +256,7 @@ namespace ServerManagementPlugin
                 ConsoleProcess.StartDetachedInNewProcessGroup(fileName, String.Empty);
             }
 
-            lock (shutdownLocker)
+            lock (locker)
             {
                 shutdownRequested = true;
             }
@@ -285,15 +284,18 @@ namespace ServerManagementPlugin
                     Config.Save();
                 }
 
+                lock (locker)
+                {
+                    startingOrRestarting = true;
+                }
+
                 if (MonoHelper.IsRunningOnMono())
                 {
 
                     if (!string.IsNullOrEmpty(fileName))
                     {
-
                         using (Process newServerProc = new Process())
                         {
-
                             ProcessStartInfo newPsi = new ProcessStartInfo
                             {
                                 UseShellExecute = false,
@@ -306,7 +308,6 @@ namespace ServerManagementPlugin
 
                             newServerProc.Close();
                         }
-
 
                         Logger.Info("New server instance started, shutting down the old one now!");
 
@@ -323,7 +324,6 @@ namespace ServerManagementPlugin
                 {
                     if (!string.IsNullOrEmpty(fileName))
                     {
-
                         ConsoleProcess.StartDetachedInNewProcessGroup(fileName, String.Empty);
 
                         Logger.Info("New server instance started, shutting down the old one now!");
@@ -342,7 +342,7 @@ namespace ServerManagementPlugin
                 Logger.Warn("Starbound Server process not found!");
             }
 
-            lock (shutdownLocker)
+            lock (locker)
             {
                 shutdownRequested = false;
             }
@@ -355,7 +355,7 @@ namespace ServerManagementPlugin
             if (serverProc == null || serverProc.HasExited)
                 return;
 
-            lock (shutdownLocker)
+            lock (locker)
             {
                 shutdownRequested = true;
             }
