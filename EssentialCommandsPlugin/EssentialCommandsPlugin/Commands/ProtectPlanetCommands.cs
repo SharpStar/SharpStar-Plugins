@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using SharpStar.Lib;
@@ -15,10 +16,11 @@ namespace EssentialCommandsPlugin.Commands
     public class ProtectPlanetCommands
     {
 
-        private Dictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>> _planets;
+        private readonly ConcurrentDictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>> _planets;
 
         public ProtectPlanetCommands()
         {
+            _planets = new ConcurrentDictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>>();
             RefreshProtectedPlanets();
         }
 
@@ -76,7 +78,7 @@ namespace EssentialCommandsPlugin.Commands
             client.SendChatMessage("Server", "Planet now protected!");
 
             if (planet != null && !_planets.ContainsKey(planet))
-                _planets.Add(planet, new List<EssentialCommandsBuilder>());
+                _planets.TryAdd(planet, new List<EssentialCommandsBuilder>());
 
         }
 
@@ -117,7 +119,8 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            _planets.Remove(planet);
+            List<EssentialCommandsBuilder> outVal;
+            _planets.TryRemove(planet, out outVal);
 
             EssentialCommands.Database.RemoveProtectedPlanet(client.Server.Player.Coordinates);
 
@@ -200,7 +203,7 @@ namespace EssentialCommandsPlugin.Commands
 
             if (builder != null)
             {
-                var x = _planets.SingleOrDefault(p => p.Key == planet);
+                var x = _planets.FirstOrDefault(p => p.Key == planet);
 
                 if (x.Value.All(p => p.Id != builder.Id))
                     x.Value.Add(builder);
@@ -282,7 +285,7 @@ namespace EssentialCommandsPlugin.Commands
             client.SendChatMessage("Server", String.Format("User {0} can no longer build on this planet", user.Username));
 
 
-            var x = _planets.SingleOrDefault(p => p.Key == planet);
+            var x = _planets.FirstOrDefault(p => p.Key == planet);
 
             if (x.Value != null)
             {
@@ -295,7 +298,7 @@ namespace EssentialCommandsPlugin.Commands
         public void OnTryBuild(IPacket packet, StarboundClient client)
         {
 
-            if (_planets.Count == 0)
+            if (_planets == null || _planets.Count == 0)
                 return;
 
             KnownPacket p = (KnownPacket)packet.PacketId;
@@ -313,12 +316,12 @@ namespace EssentialCommandsPlugin.Commands
                         if (client.Server.Player.UserAccount.IsAdmin) //all admins are allowed to build
                             return;
 
-                        var planets = _planets.SingleOrDefault(w => w.Key == client.Server.Player.Coordinates);
+                        var planets = _planets.FirstOrDefault(w => w.Key == client.Server.Player.Coordinates);
 
                         if (planets.Value == null)
                             return;
 
-                        EssentialCommandsBuilder builder = planets.Value.SingleOrDefault(w => w.UserId == client.Server.Player.UserAccount.Id && w.Allowed);
+                        EssentialCommandsBuilder builder = planets.Value.FirstOrDefault(w => w.UserId == client.Server.Player.UserAccount.Id && w.Allowed);
 
                         if (builder == null && planets.Key.OwnerId != client.Server.Player.UserAccount.Id)
                         {
@@ -331,22 +334,17 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (EntityCreatePacket)packet;
 
-                                foreach (Entity ent in ec.Entities.Where(x => x.EntityType == EntityType.Projectile))
+                                foreach (Entity ent in ec.Entities.Where(x => x.EntityType == EntityType.Projectile && x is ProjectileEntity))
                                 {
-                                    if (ent.EntityType == EntityType.Projectile)
-                                    {
+                                    ProjectileEntity pent = (ProjectileEntity)ent;
 
-                                        ProjectileEntity pent = (ProjectileEntity)ent;
+                                    if (pent.ThrowerEntityId != client.Server.Player.EntityId)
+                                        continue;
 
-                                        if (pent.ThrowerEntityId != client.Server.Player.EntityId)
-                                            continue;
+                                    if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
+                                        continue;
 
-                                        if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
-                                            continue;
-
-                                        pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
-
-                                    }
+                                    pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
                                 }
 
                             }
@@ -361,7 +359,7 @@ namespace EssentialCommandsPlugin.Commands
                     else
                     {
 
-                        var planets = _planets.SingleOrDefault(w => w.Key == client.Server.Player.Coordinates);
+                        var planets = _planets.FirstOrDefault(w => w.Key == client.Server.Player.Coordinates);
 
                         if (planets.Value != null)
                         {
@@ -374,24 +372,18 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (EntityCreatePacket)packet;
 
-                                foreach (Entity ent in ec.Entities)
+                                foreach (Entity ent in ec.Entities.Where(x => x.EntityType == EntityType.Projectile && x is ProjectileEntity))
                                 {
-                                    if (ent.EntityType == EntityType.Projectile)
-                                    {
+                                    ProjectileEntity pent = (ProjectileEntity)ent;
 
-                                        ProjectileEntity pent = (ProjectileEntity)ent;
+                                    if (pent.ThrowerEntityId != client.Server.Player.EntityId)
+                                        continue;
 
-                                        if (pent.ThrowerEntityId != client.Server.Player.EntityId)
-                                            continue;
+                                    if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
+                                        continue;
 
-                                        if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
-                                            continue;
-
-                                        pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
-
-                                    }
+                                    pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
                                 }
-
                             }
                             else
                             {
@@ -410,20 +402,17 @@ namespace EssentialCommandsPlugin.Commands
 
         private void RefreshProtectedPlanets()
         {
-
-            _planets = new Dictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>>();
+            _planets.Clear();
 
             var planets = EssentialCommands.Database.GetPlanets();
 
             foreach (var planet in planets)
             {
-
                 var builders = EssentialCommands.Database.GetPlanetBuilders(planet.Id);
 
-                _planets.Add(planet, builders);
+                _planets.TryAdd(planet, builders);
 
             }
-
         }
 
     }

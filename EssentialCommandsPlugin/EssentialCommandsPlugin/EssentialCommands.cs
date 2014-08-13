@@ -16,7 +16,7 @@ using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("EssentialCommands", Version = "1.0.2")]
+[assembly: Addin("EssentialCommands", Version = "1.0.3")]
 [assembly: AddinDescription("A command plugin that is essential")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
@@ -57,6 +57,12 @@ namespace EssentialCommandsPlugin
 
         #endregion
 
+        #region Console Commands
+
+        private readonly HelpConsoleCommand _helpConsoleCommand = new HelpConsoleCommand();
+
+        #endregion
+
         public override string Name
         {
             get { return "Essential Commands"; }
@@ -86,7 +92,7 @@ namespace EssentialCommandsPlugin
             RegisterCommandObject(_planetProtect);
             RegisterCommandObject(_helpCommand);
 
-            RegisterConsoleCommandObject(new HelpConsoleCommand());
+            RegisterConsoleCommandObject(_helpConsoleCommand);
 
             RegisterEventObject(_banCommand);
             RegisterEventObject(_motdCommands);
@@ -102,6 +108,15 @@ namespace EssentialCommandsPlugin
         public override void OnUnload()
         {
             _advertCommands.StopSendingAdverts();
+
+            foreach (var cmdObj in RegisteredCommandObjects)
+            {
+                if (cmdObj.Key is IDisposable)
+                {
+                    ((IDisposable)cmdObj.Key).Dispose();
+                }
+            }
+
         }
 
         public override bool OnChatCommandReceived(StarboundClient client, string command, string[] args)

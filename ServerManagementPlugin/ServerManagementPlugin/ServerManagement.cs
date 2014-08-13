@@ -18,7 +18,7 @@ using SharpStar.Lib.Logging;
 using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 
-[assembly: Addin("ServerManagement", Version = "1.0.3")]
+[assembly: Addin("ServerManagement", Version = "1.0.6")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 namespace ServerManagementPlugin
@@ -41,6 +41,10 @@ namespace ServerManagementPlugin
 
         private Timer connTimer;
 
+        private ManagementEventWatcher processStopEvent;
+
+        private int pid;
+
         public override void OnLoad()
         {
             RegisterCommandObject(new ServerCommand());
@@ -53,6 +57,20 @@ namespace ServerManagementPlugin
                 connTimer.Dispose();
             }
 
+            if (Config.ConfigFile.AutoRestartOnCrash && !MonoHelper.IsRunningOnMono())
+            {
+                processStopEvent = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStopTrace");
+                processStopEvent.EventArrived += processStopEvent_EventArrived;
+                processStopEvent.Start();
+            }
+
+            Process initProc = GetStarboundProcess();
+
+            if (initProc != null)
+            {
+                pid = initProc.Id;
+            }
+
             if (Config.ConfigFile.ServerCheckInterval > 0)
             {
                 connTimer = new Timer();
@@ -62,9 +80,27 @@ namespace ServerManagementPlugin
 
                     bool serverOnline = CheckServer();
 
-                    if (!serverOnline && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested)
+                    Process serverProc = GetStarboundProcess();
+
+                    if (serverProc != null)
                     {
-                        if (GetStarboundProcess() != null)
+                        pid = serverProc.Id;
+                    }
+
+                    bool startRestart;
+
+                    if (MonoHelper.IsRunningOnMono())
+                    {
+                        startRestart = !serverOnline && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
+                    }
+                    else
+                    {
+                        startRestart = ((serverProc != null && !serverProc.Responding) || !serverOnline) && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
+                    }
+
+                    if (startRestart)
+                    {
+                        if (serverProc != null)
                         {
                             RestartServer();
 
@@ -80,19 +116,13 @@ namespace ServerManagementPlugin
                     }
                     else if (serverOnline)
                     {
-
-                        Process[] procs = Process.GetProcesses().Where(p => p.ProcessName.Contains("starbound_server")).ToArray();
-
-                        if (procs.Length == 1)
+                        if (serverProc != null)
                         {
-
-                            string fileName = FindProcessFileName(procs[0].Id);
+                            string fileName = FindProcessFileName(pid);
 
                             Config.ConfigFile.ServerExecutable = fileName;
                             Config.Save();
-
                         }
-
                     }
 
                 };
@@ -102,10 +132,39 @@ namespace ServerManagementPlugin
 
         }
 
+        private void processStopEvent_EventArrived(object sender, EventArrivedEventArgs e)
+        {
+            int processId = int.Parse(e.NewEvent.Properties["ProcessID"].Value.ToString());
+
+            if (processId == pid && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested)
+            {
+                StartServer();
+
+                Logger.Error("The Starbound server has been terminated. Starting it back up!");
+            }
+        }
+
+        public override void OnUnload()
+        {
+            if (connTimer != null)
+            {
+                connTimer.Stop();
+                connTimer = null;
+            }
+
+            if (processStopEvent != null)
+            {
+                processStopEvent.Stop();
+                processStopEvent.Dispose();
+                processStopEvent = null;
+            }
+        }
+
         private bool CheckServer()
         {
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
+            bool toReturn;
             try
             {
 
@@ -116,10 +175,11 @@ namespace ServerManagementPlugin
                 else
                     socket.Connect(bind, SharpStarMain.Instance.Server.ServerPort);
 
+                toReturn = true;
             }
             catch (Exception)
             {
-                return false;
+                toReturn = false;
             }
             finally
             {
@@ -127,7 +187,7 @@ namespace ServerManagementPlugin
                 socket.Dispose();
             }
 
-            return true;
+            return toReturn;
 
         }
 

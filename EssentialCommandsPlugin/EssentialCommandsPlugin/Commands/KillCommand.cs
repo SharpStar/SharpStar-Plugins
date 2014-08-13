@@ -52,7 +52,6 @@ namespace EssentialCommandsPlugin.Commands
             {
                 cl.PlayerClient.SendPacket(dest);
             }
-
         }
 
     }
