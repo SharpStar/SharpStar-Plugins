@@ -17,8 +17,9 @@ using SharpStar.Lib;
 using SharpStar.Lib.Logging;
 using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
+using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.7")]
+[assembly: Addin("ServerManagement", Version = "1.0.8")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 namespace ServerManagementPlugin
@@ -402,6 +403,17 @@ namespace ServerManagementPlugin
 
                 checkProcTimer.Start();
 
+            }
+
+            foreach (StarboundServerClient ssc in SharpStarMain.Instance.Server.Clients.ToList())
+            {
+                try
+                {
+                    ssc.PlayerClient.ForceDisconnect();
+                }
+                catch
+                {
+                }
             }
 
         }
