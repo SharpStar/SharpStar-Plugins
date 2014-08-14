@@ -15,7 +15,7 @@ using SharpStar.Lib.Server;
 using SharpStarIrcPlugin.Commands;
 using SharpStarIrcPlugin.QueryCommands;
 
-[assembly: Addin("Irc", Version = "1.0.3")]
+[assembly: Addin("Irc", Version = "1.0.4")]
 [assembly: AddinDescription("An IRC plugin for SharpStar")]
 [assembly: ImportAddinAssembly("Meebey.SmartIrc4net.dll")]
 [assembly: ImportAddinAssembly("StarkSoftProxy.dll")]

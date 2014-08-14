@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Meebey.SmartIrc4net;
 using SharpStar.Lib;
+using SharpStar.Lib.Extensions;
 
 namespace SharpStarIrcPlugin.Commands
 {
@@ -34,7 +35,7 @@ namespace SharpStarIrcPlugin.Commands
                     if (player != null)
                     {
 
-                        if (player.ServerClient.CheckConnection())
+                        if (player.ServerClient.Socket.IsConnected())
                             player.ForceDisconnect();
 
                         plugin.Irc.SendMessage(SendType.Message, channel, String.Format("Player {0}{1}{0} has been kicked!", IrcConstants.IrcBold, joined));
