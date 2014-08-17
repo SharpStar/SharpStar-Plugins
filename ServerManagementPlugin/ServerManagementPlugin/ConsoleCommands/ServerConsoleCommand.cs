@@ -63,7 +63,7 @@ namespace ServerManagementPlugin.ConsoleCommands
 
                             if (!string.IsNullOrEmpty(ServerManagement.Config.ConfigFile.ServerRestartMessage))
                             {
-                                foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                foreach (SharpStarServerClient cl in SharpStarMain.Instance.Server.Clients)
                                 {
                                     cl.PlayerClient.SendChatMessage("Server", ServerManagement.Config.ConfigFile.ServerRestartMessage);
                                 }
@@ -101,7 +101,7 @@ namespace ServerManagementPlugin.ConsoleCommands
                                     else
                                         Logger.Info(ts2.TotalDays + " days until restart...");
 
-                                    foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                    foreach (SharpStarServerClient cl in SharpStarMain.Instance.Server.Clients)
                                     {
 
                                         if (ts2.TotalMinutes <= 1)

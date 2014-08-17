@@ -15,7 +15,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("giveitem", "Give a player an item")]
         [CommandPermission("giveitem")]
-        public void GiveItem(StarboundClient client, string[] args)
+        public void GiveItem(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "giveitem"))

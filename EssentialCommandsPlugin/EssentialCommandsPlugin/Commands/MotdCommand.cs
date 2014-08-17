@@ -14,7 +14,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setmotd", "Set the server's message of the day")]
         [CommandPermission("setmotd")]
-        public void SetMotd(StarboundClient client, string[] args)
+        public void SetMotd(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setmotd"))
@@ -30,7 +30,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Event("afterConnectionResponse")]
-        public void AfterConnectionResponse(IPacket packet, StarboundClient client)
+        public void AfterConnectionResponse(IPacket packet, SharpStarClient client)
         {
 
             if (!string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.Motd)) //if motd has been set

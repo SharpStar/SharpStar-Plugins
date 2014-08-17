@@ -16,7 +16,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("warpto", "Warp to a player's ship")]
         [CommandPermission("warp")]
-        public void WarpToPlayer(StarboundClient client, string[] args)
+        public void WarpToPlayer(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("warp"))
@@ -56,7 +56,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("warptome", "Warp a player to your ship")]
         [CommandPermission("warp")]
-        public void WarpToMe(StarboundClient client, string[] args)
+        public void WarpToMe(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("warp"))

@@ -12,7 +12,7 @@ namespace EssentialCommandsPlugin.Commands
     {
 
         [Command("who", "List the players on the server")]
-        public void WhoCommand(StarboundClient client, string[] args)
+        public void WhoCommand(SharpStarClient client, string[] args)
         {
 
             const int maxPerPage = 4;
@@ -93,7 +93,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Command("worldwho", "List the players on your world")]
-        public void WorldWhoCommand(StarboundClient client, string[] args)
+        public void WorldWhoCommand(SharpStarClient client, string[] args)
         {
 
             if (client.Server.Player.Coordinates == null || client.Server.Player.OnShip)

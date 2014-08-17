@@ -14,7 +14,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("broadcast", "Broadcast a message to the server")]
         [CommandPermission("broadcast")]
-        public void Broadcast(StarboundClient client, string[] args)
+        public void Broadcast(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "broadcast"))

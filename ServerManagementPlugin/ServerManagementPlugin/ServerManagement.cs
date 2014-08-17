@@ -19,8 +19,9 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.8")]
+[assembly: Addin("ServerManagement", Version = "1.0.9")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
+[assembly: AddinProperty("sharpstar", "0.2.3.0")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 namespace ServerManagementPlugin
 {
@@ -46,7 +47,7 @@ namespace ServerManagementPlugin
 
         private ManagementEventWatcher processStopEvent;
 
-        private int pid;
+        private static int pid;
 
         public override void OnLoad()
         {
@@ -84,6 +85,14 @@ namespace ServerManagementPlugin
                 {
                     bool serverOnline = CheckServer();
 
+                    if (serverOnline)
+                    {
+                        lock (locker)
+                        {
+                            startingOrRestarting = false;
+                        }
+                    }
+
                     Process serverProc = GetStarboundProcess();
 
                     if (serverProc != null)
@@ -95,11 +104,11 @@ namespace ServerManagementPlugin
 
                     if (MonoHelper.IsRunningOnMono())
                     {
-                        startRestart = !startingOrRestarting && !serverOnline && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
+                        startRestart = (!serverOnline || serverProc == null) && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
                     }
                     else
                     {
-                        startRestart = !startingOrRestarting && ((serverProc != null && !serverProc.Responding) || !serverOnline) && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
+                        startRestart = ((serverProc != null && !serverProc.Responding) || serverProc == null || !serverOnline) && Config.ConfigFile.AutoRestartOnCrash && !shutdownRequested;
                     }
 
                     if (startRestart)
@@ -174,9 +183,9 @@ namespace ServerManagementPlugin
                 string bind = SharpStarMain.Instance.Config.ConfigFile.StarboundBind;
 
                 if (string.IsNullOrEmpty(bind))
-                    socket.Connect(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Server.ServerPort);
+                    socket.Connect(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Config.ConfigFile.ServerPort);
                 else
-                    socket.Connect(bind, SharpStarMain.Instance.Server.ServerPort);
+                    socket.Connect(bind, SharpStarMain.Instance.Config.ConfigFile.ServerPort);
 
                 toReturn = true;
             }
@@ -254,12 +263,14 @@ namespace ServerManagementPlugin
             }
             else
             {
-                ConsoleProcess.StartDetachedInNewProcessGroup(fileName, String.Empty);
+                Process proc = ConsoleProcess.StartDetachedInNewProcessGroup(fileName, String.Empty);
+                pid = proc.Id;
             }
 
             lock (locker)
             {
-                shutdownRequested = true;
+                shutdownRequested = false;
+                startingOrRestarting = false;
             }
 
         }
@@ -325,11 +336,22 @@ namespace ServerManagementPlugin
                 {
                     if (!string.IsNullOrEmpty(fileName))
                     {
-                        ConsoleProcess.StartDetachedInNewProcessGroup(fileName, String.Empty);
+                        Process proc = ConsoleProcess.StartDetachedInNewProcessGroup(fileName, String.Empty);
+                        pid = proc.Id;
 
                         Logger.Info("New server instance started, shutting down the old one now!");
 
+                        lock (locker)
+                        {
+                            startingOrRestarting = true;
+                        }
+
                         StopServer(serverProc);
+
+                        lock (locker)
+                        {
+                            startingOrRestarting = false;
+                        }
                     }
                     else
                     {
@@ -405,7 +427,7 @@ namespace ServerManagementPlugin
 
             }
 
-            foreach (StarboundServerClient ssc in SharpStarMain.Instance.Server.Clients.ToList())
+            foreach (SharpStarServerClient ssc in SharpStarMain.Instance.Server.Clients.ToList())
             {
                 try
                 {

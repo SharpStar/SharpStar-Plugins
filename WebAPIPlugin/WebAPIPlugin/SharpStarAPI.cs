@@ -26,7 +26,7 @@ namespace WebAPIPlugin
 
                 var apiPlayers = new List<APIStarboundPlayer>();
 
-                foreach (StarboundServerClient client in clients)
+                foreach (SharpStarServerClient client in clients)
                 {
 
                     StarboundPlayer player = client.Player;

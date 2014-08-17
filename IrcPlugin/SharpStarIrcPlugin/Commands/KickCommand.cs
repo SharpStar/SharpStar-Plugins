@@ -36,7 +36,7 @@ namespace SharpStarIrcPlugin.Commands
                     {
 
                         if (player.ServerClient.Socket.IsConnected())
-                            player.ForceDisconnect();
+                            player.PlayerClient.ForceDisconnect();
 
                         plugin.Irc.SendMessage(SendType.Message, channel, String.Format("Player {0}{1}{0} has been kicked!", IrcConstants.IrcBold, joined));
 

@@ -12,7 +12,7 @@ namespace EssentialCommandsPlugin.Commands
     {
 
         [Command("help", "Show a list of commands")]
-        public void ShowHelp(StarboundClient client, string[] args)
+        public void ShowHelp(SharpStarClient client, string[] args)
         {
 
             client.SendChatMessage("Server", "-- List of Commands --");

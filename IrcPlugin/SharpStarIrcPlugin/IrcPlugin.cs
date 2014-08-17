@@ -15,10 +15,11 @@ using SharpStar.Lib.Server;
 using SharpStarIrcPlugin.Commands;
 using SharpStarIrcPlugin.QueryCommands;
 
-[assembly: Addin("Irc", Version = "1.0.4")]
+[assembly: Addin("Irc", Version = "1.0.5")]
 [assembly: AddinDescription("An IRC plugin for SharpStar")]
 [assembly: ImportAddinAssembly("Meebey.SmartIrc4net.dll")]
 [assembly: ImportAddinAssembly("StarkSoftProxy.dll")]
+[assembly: AddinProperty("sharpstar", "0.2.3.0")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
 namespace SharpStarIrcPlugin
@@ -265,7 +266,7 @@ namespace SharpStarIrcPlugin
 
         }
 
-        private void ChatSent(IPacket packet, StarboundClient client)
+        private void ChatSent(IPacket packet, SharpStarClient client)
         {
 
             var csp = packet as ChatSentPacket;
@@ -281,7 +282,7 @@ namespace SharpStarIrcPlugin
             }
         }
 
-        private void ClientConnected(IPacket packet, StarboundClient client)
+        private void ClientConnected(IPacket packet, SharpStarClient client)
         {
 
             var ccp = packet as ClientConnectPacket;
@@ -298,7 +299,7 @@ namespace SharpStarIrcPlugin
 
         }
 
-        private void ClientDisconnected(IPacket packet, StarboundClient client)
+        private void ClientDisconnected(IPacket packet, SharpStarClient client)
         {
 
             var cdp = packet as ClientDisconnectPacket;

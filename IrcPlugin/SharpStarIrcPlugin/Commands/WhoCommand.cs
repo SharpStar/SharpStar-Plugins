@@ -18,7 +18,7 @@ namespace SharpStarIrcPlugin.Commands
         public override void ParseCommand(IrcPlugin plugin, string channel, string nick, string[] args)
         {
 
-            List<StarboundServerClient> clients;
+            List<SharpStarServerClient> clients;
 
             int page = 1;
 

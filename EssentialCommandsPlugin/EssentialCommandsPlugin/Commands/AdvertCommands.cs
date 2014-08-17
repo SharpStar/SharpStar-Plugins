@@ -62,7 +62,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("addadvert", "Add an advert to display")]
         [CommandPermission("adverts")]
-        public void AddAdvert(StarboundClient client, string[] args)
+        public void AddAdvert(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "addadvert"))
@@ -132,7 +132,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("removeadvert", "Remove an advert")]
         [CommandPermission("adverts")]
-        public void RemoveAdvert(StarboundClient client, string[] args)
+        public void RemoveAdvert(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "removeadvert"))
@@ -168,7 +168,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("toggleadvert", "Toggle advert")]
         [CommandPermission("adverts")]
-        public void ToggleAdvert(StarboundClient client, string[] args)
+        public void ToggleAdvert(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "toggleadvert"))

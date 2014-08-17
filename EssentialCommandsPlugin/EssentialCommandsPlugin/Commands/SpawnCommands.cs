@@ -13,7 +13,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("spawnplanet", "Go to the spawn planet")]
         [CommandPermission("gotospawn")]
-        public void GoToSpawnPlanet(StarboundClient client, string[] args)
+        public void GoToSpawnPlanet(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "spawnplanet"))
@@ -39,7 +39,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setspawn", "Set the spawn location")]
         [CommandPermission("spawn")]
-        public void SetSpawnPlanet(StarboundClient client, string[] args)
+        public void SetSpawnPlanet(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setspawn"))
@@ -63,7 +63,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("unsetspawn", "Unset the spawn location")]
         [CommandPermission("spawn")]
-        public void UnsetSpawnPlanet(StarboundClient client, string[] args)
+        public void UnsetSpawnPlanet(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "unsetspawn"))

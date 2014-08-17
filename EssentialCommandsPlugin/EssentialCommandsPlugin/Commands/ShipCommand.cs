@@ -13,7 +13,7 @@ namespace EssentialCommandsPlugin.Commands
     {
 
         [Command("ship", "Set your ship's protection status")]
-        public void Ship(StarboundClient client, string[] args)
+        public void Ship(SharpStarClient client, string[] args)
         {
 
             if (client.Server.Player.UserAccount == null)
@@ -158,7 +158,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Event("warpCommand")]
-        public void WarpCommandRecv(IPacket packet, StarboundClient client)
+        public void WarpCommandRecv(IPacket packet, SharpStarClient client)
         {
 
             WarpCommandPacket wcp = (WarpCommandPacket)packet;
@@ -168,7 +168,7 @@ namespace EssentialCommandsPlugin.Commands
 
                 string playerName = wcp.Player;
 
-                var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
+                var players = SharpStarMain.Instance.Server.Clients.ToList().Where(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
 
                 foreach (var plr in players)
                 {

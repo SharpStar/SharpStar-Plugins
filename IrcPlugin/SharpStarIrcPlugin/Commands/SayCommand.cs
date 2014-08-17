@@ -22,7 +22,7 @@ namespace SharpStarIrcPlugin.Commands
 
             string message = string.Join(" ", args);
 
-            foreach (StarboundServerClient ssc in SharpStarMain.Instance.Server.Clients)
+            foreach (SharpStarServerClient ssc in SharpStarMain.Instance.Server.Clients)
             {
                 try
                 {

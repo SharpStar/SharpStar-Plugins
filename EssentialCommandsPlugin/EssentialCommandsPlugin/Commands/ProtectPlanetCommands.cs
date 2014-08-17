@@ -16,17 +16,17 @@ namespace EssentialCommandsPlugin.Commands
     public class ProtectPlanetCommands
     {
 
-        private readonly ConcurrentDictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>> _planets;
+        private readonly Dictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>> _planets;
 
         public ProtectPlanetCommands()
         {
-            _planets = new ConcurrentDictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>>();
+            _planets = new Dictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>>();
             RefreshProtectedPlanets();
         }
 
         [Command("protect", "Protect a planet")]
         [CommandPermission("planetprotect")]
-        public void Protect(StarboundClient client, string[] args)
+        public void Protect(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "protect"))
@@ -78,13 +78,13 @@ namespace EssentialCommandsPlugin.Commands
             client.SendChatMessage("Server", "Planet now protected!");
 
             if (planet != null && !_planets.ContainsKey(planet))
-                _planets.TryAdd(planet, new List<EssentialCommandsBuilder>());
+                _planets.Add(planet, new List<EssentialCommandsBuilder>());
 
         }
 
         [Command("unprotect", "Remove a planet's protection")]
         [CommandPermission("planetprotect")]
-        public void Unprotect(StarboundClient client, string[] args)
+        public void Unprotect(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "unprotect"))
@@ -119,8 +119,7 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            List<EssentialCommandsBuilder> outVal;
-            _planets.TryRemove(planet, out outVal);
+            _planets.Remove(planet);
 
             EssentialCommands.Database.RemoveProtectedPlanet(client.Server.Player.Coordinates);
 
@@ -130,7 +129,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("addbuilder", "Allows a user to build on the planet")]
         [CommandPermission("planetprotect")]
-        public void AddBuilder(StarboundClient client, string[] args)
+        public void AddBuilder(SharpStarClient client, string[] args)
         {
 
             if (args.Length != 1)
@@ -213,7 +212,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("removebuilder", "Disallow a user from building on a planet")]
         [CommandPermission("planetprotect")]
-        public void RemoveBuilder(StarboundClient client, string[] args)
+        public void RemoveBuilder(SharpStarClient client, string[] args)
         {
 
             if (args.Length != 1)
@@ -295,7 +294,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Event("packetReceived")]
-        public void OnTryBuild(IPacket packet, StarboundClient client)
+        public void OnTryBuild(IPacket packet, SharpStarClient client)
         {
 
             if (_planets == null || _planets.Count == 0)
@@ -303,8 +302,8 @@ namespace EssentialCommandsPlugin.Commands
 
             KnownPacket p = (KnownPacket)packet.PacketId;
 
-            if (p == KnownPacket.ModifyTileList || p == KnownPacket.DamageTileGroup || p == KnownPacket.DamageTile || p == KnownPacket.ConnectWire || p == KnownPacket.DisconnectAllWires
-                || p == KnownPacket.EntityCreate)
+            if ((p == KnownPacket.ModifyTileList || p == KnownPacket.DamageTileGroup || p == KnownPacket.DamageTile || p == KnownPacket.ConnectWire || p == KnownPacket.DisconnectAllWires
+                || p == KnownPacket.EntityCreate || p == KnownPacket.SpawnEntity || p == KnownPacket.TileLiquidUpdate))
             {
 
                 if (client.Server.Player.Coordinates != null && !client.Server.Player.OnShip)
@@ -334,17 +333,65 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (EntityCreatePacket)packet;
 
-                                foreach (Entity ent in ec.Entities.Where(x => x.EntityType == EntityType.Projectile && x is ProjectileEntity))
+                                foreach (Entity ent in ec.Entities)
                                 {
-                                    ProjectileEntity pent = (ProjectileEntity)ent;
+                                    if (ent.EntityType == EntityType.Projectile && ent is ProjectileEntity)
+                                    {
 
-                                    if (pent.ThrowerEntityId != client.Server.Player.EntityId)
-                                        continue;
+                                        ProjectileEntity pent = (ProjectileEntity)ent;
 
-                                    if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
-                                        continue;
+                                        if (pent.ThrowerEntityId != client.Server.Player.EntityId)
+                                            continue;
 
-                                    pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
+                                        if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
+                                            continue;
+
+                                        if (string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.ReplaceProjectileWith))
+                                        {
+                                            client.Server.PlayerClient.SendPacket(new EntityDestroyPacket
+                                            {
+                                                EntityId = ent.EntityId,
+                                                Unknown = new byte[0]
+                                            });
+
+                                            packet.Ignore = true;
+
+                                            break;
+                                        }
+
+                                        pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
+
+                                    }
+                                }
+
+                            }
+                            else if (p == KnownPacket.SpawnEntity)
+                            {
+                                if (EssentialCommands.Config.ConfigFile.AllowProjectiles)
+                                    return;
+
+                                var ec = (SpawnEntityPacket)packet;
+
+                                foreach (SpawnedEntity ent in ec.SpawnedEntities)
+                                {
+                                    if (ent.EntityType == EntityType.Projectile && ent is SpawnedProjectile)
+                                    {
+                                        SpawnedProjectile sp = (SpawnedProjectile)ent;
+
+                                        if (!EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(sp.ProjectileKey, StringComparison.OrdinalIgnoreCase)))
+                                        {
+                                            packet.Ignore = true;
+
+                                            break;
+                                        }
+                                    }
+                                    else if (ent.EntityType == EntityType.Object || ent.EntityType == EntityType.Plant || ent.EntityType == EntityType.PlantDrop || ent.EntityType == EntityType.Monster
+                                        || ent.EntityType == EntityType.Effect)
+                                    {
+                                        packet.Ignore = true;
+
+                                        break;
+                                    }
                                 }
 
                             }
@@ -372,18 +419,66 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (EntityCreatePacket)packet;
 
-                                foreach (Entity ent in ec.Entities.Where(x => x.EntityType == EntityType.Projectile && x is ProjectileEntity))
+                                foreach (Entity ent in ec.Entities)
                                 {
-                                    ProjectileEntity pent = (ProjectileEntity)ent;
+                                    if (ent.EntityType == EntityType.Projectile)
+                                    {
 
-                                    if (pent.ThrowerEntityId != client.Server.Player.EntityId)
-                                        continue;
+                                        ProjectileEntity pent = (ProjectileEntity)ent;
 
-                                    if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
-                                        continue;
+                                        if (pent.ThrowerEntityId != client.Server.Player.EntityId)
+                                            continue;
 
-                                    pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
+                                        if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
+                                            continue;
+
+                                        if (string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.ReplaceProjectileWith))
+                                        {
+                                            client.Server.PlayerClient.SendPacket(new EntityDestroyPacket
+                                            {
+                                                EntityId = ent.EntityId,
+                                                Unknown = new byte[0]
+                                            });
+
+                                            packet.Ignore = true;
+
+                                            break;
+                                        }
+
+                                        pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
+
+                                    }
                                 }
+                            }
+                            else if (p == KnownPacket.SpawnEntity)
+                            {
+                                if (EssentialCommands.Config.ConfigFile.AllowProjectiles)
+                                    return;
+
+                                var ec = (SpawnEntityPacket)packet;
+
+                                foreach (SpawnedEntity ent in ec.SpawnedEntities)
+                                {
+                                    if (ent.EntityType == EntityType.Projectile)
+                                    {
+                                        SpawnedProjectile sp = (SpawnedProjectile)ent;
+
+                                        if (!EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(sp.ProjectileKey, StringComparison.OrdinalIgnoreCase)))
+                                        {
+                                            packet.Ignore = true;
+
+                                            break;
+                                        }
+                                    }
+                                    else if (ent.EntityType == EntityType.Object || ent.EntityType == EntityType.Plant || ent.EntityType == EntityType.PlantDrop || ent.EntityType == EntityType.Monster
+                                        || ent.EntityType == EntityType.Effect)
+                                    {
+                                        packet.Ignore = true;
+
+                                        break;
+                                    }
+                                }
+
                             }
                             else
                             {
@@ -410,7 +505,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 var builders = EssentialCommands.Database.GetPlanetBuilders(planet.Id);
 
-                _planets.TryAdd(planet, builders);
+                _planets.Add(planet, builders);
 
             }
         }

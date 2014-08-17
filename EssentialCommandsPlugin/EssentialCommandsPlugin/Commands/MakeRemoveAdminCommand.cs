@@ -11,7 +11,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("makeadmin", "Make a user an administrator")]
         [CommandPermission(true)]
-        public void MakeAdmin(StarboundClient client, string[] args)
+        public void MakeAdmin(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.IsAdmin(client))
@@ -53,7 +53,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("removeadmin", "Remove an administrator")]
         [CommandPermission(true)]
-        public void RemoveAdmin(StarboundClient client, string[] args)
+        public void RemoveAdmin(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.IsAdmin(client))

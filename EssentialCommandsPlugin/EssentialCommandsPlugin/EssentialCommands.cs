@@ -16,8 +16,9 @@ using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("EssentialCommands", Version = "1.0.3")]
+[assembly: Addin("EssentialCommands", Version = "1.0.5.0")]
 [assembly: AddinDescription("A command plugin that is essential")]
+[assembly: AddinProperty("sharpstar", "0.2.3.0")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
 namespace EssentialCommandsPlugin
@@ -119,7 +120,7 @@ namespace EssentialCommandsPlugin
 
         }
 
-        public override bool OnChatCommandReceived(StarboundClient client, string command, string[] args)
+        public override bool OnChatCommandReceived(SharpStarClient client, string command, string[] args)
         {
 
             if (client.Server.Player.UserGroupId.HasValue && client.Server.Player.UserAccount != null)
@@ -154,7 +155,7 @@ namespace EssentialCommandsPlugin
 
         }
 
-        public static void KickBanPlayer(StarboundServerClient kickBanner, List<StarboundServerClient> players, bool ban = false)
+        public static void KickBanPlayer(SharpStarServerClient kickBanner, List<SharpStarServerClient> players, bool ban = false)
         {
 
             for (int i = 0; i < players.Count; i++)
@@ -162,7 +163,7 @@ namespace EssentialCommandsPlugin
 
                 var plr = players[i];
 
-                if (!plr.Connected)
+                if (!plr.ServerClient.Connected)
                     continue;
 
                 if (!ban)
@@ -175,7 +176,13 @@ namespace EssentialCommandsPlugin
 
                     if (!ban)
                     {
-                        plr.Disconnected += (sender, e) => kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been kicked!", plr.Player.Name));
+                        plr.ServerClient.ClientDisconnected += (sender, e) =>
+                        {
+                            if (e.Client.Connected)
+                                kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been kicked!", plr.Player.Name));
+
+                            Logger.Info("Player {0} has kicked by {1} ({2})", e.Client.Server.Player.Name, kickBanner.Player.Name, kickBanner.Player.UserAccount.Username);
+                        };
                     }
                     else
                     {
@@ -187,25 +194,35 @@ namespace EssentialCommandsPlugin
 
                         Database.AddBan(plr.Player.UUID, acctId);
 
-                        plr.Disconnected += (sender, e) => kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been banned!", plr.Player.Name));
+                        plr.ServerClient.ClientDisconnected += (sender, e) =>
+                        {
+                            if (e.Client.Connected)
+                                kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been banned!", plr.Player.Name));
 
+                            Logger.Info("Player {0} has been banned by {1} ({2})", e.Client.Server.Player.Name, kickBanner.Player.Name, kickBanner.Player.UserAccount.Username);
+
+                        };
                     }
 
-                    Thread.Sleep(1500);
+                    Thread.Sleep(1000);
 
-                    plr.ForceDisconnect();
+                    if (plr.PlayerClient != null)
+                        plr.PlayerClient.ForceDisconnect();
+
+                    if (plr.ServerClient != null)
+                        plr.ServerClient.ForceDisconnect();
 
                 });
 
             }
         }
 
-        public static bool IsAdmin(StarboundClient client)
+        public static bool IsAdmin(SharpStarClient client)
         {
             return client.IsAdmin();
         }
 
-        public static bool CanUserAccess(StarboundClient client, string command, bool sendMsg = true)
+        public static bool CanUserAccess(SharpStarClient client, string command, bool sendMsg = true)
         {
             return client.CanUserAccess(command, sendMsg);
         }

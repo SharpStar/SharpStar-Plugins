@@ -13,7 +13,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("ban", "Ban a user")]
         [CommandPermission("ban")]
-        public void BanPlayer(StarboundClient client, string[] args)
+        public void BanPlayer(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "ban"))
@@ -21,15 +21,13 @@ namespace EssentialCommandsPlugin.Commands
 
             string playerName = string.Join(" ", args);
 
-            var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player != null && p.Player.Name.Equals(playerName)).ToList();
+            var players = SharpStarMain.Instance.Server.Clients.ToList().Where(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (players.Count == 0)
             {
-
                 client.SendChatMessage("Server", "There are no players by that name!");
 
                 return;
-
             }
 
             EssentialCommands.KickBanPlayer(client.Server, players, true);
@@ -38,7 +36,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("unban", "Unban a user")]
         [CommandPermission("ban")]
-        public void UnbanPlayer(StarboundClient client, string[] args)
+        public void UnbanPlayer(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "unban"))
@@ -73,7 +71,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Event("connectionResponse")]
-        public void ConnectionResponse(IPacket packet, StarboundClient client)
+        public void ConnectionResponse(IPacket packet, SharpStarClient client)
         {
 
             ConnectionResponsePacket crp = (ConnectionResponsePacket)packet;

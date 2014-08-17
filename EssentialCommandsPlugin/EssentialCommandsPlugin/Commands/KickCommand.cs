@@ -14,7 +14,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("kick", "Kick a player")]
         [CommandPermission("kick")]
-        public void KickPlayer(StarboundClient client, string[] args)
+        public void KickPlayer(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "kick"))
@@ -22,15 +22,13 @@ namespace EssentialCommandsPlugin.Commands
 
             string playerName = string.Join(" ", args);
 
-            var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player != null && p.Player.Name.Equals(playerName)).ToList();
+            var players = SharpStarMain.Instance.Server.Clients.Where(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (players.Count == 0)
             {
-
                 client.SendChatMessage("Server", "There are no players by that name!");
 
                 return;
-
             }
 
             EssentialCommands.KickBanPlayer(client.Server, players);

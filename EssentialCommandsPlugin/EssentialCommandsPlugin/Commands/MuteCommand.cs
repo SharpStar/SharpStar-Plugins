@@ -27,7 +27,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("mute", "Mute a user")]
         [CommandPermission("mute")]
-        public void MuteUser(StarboundClient client, string[] args)
+        public void MuteUser(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("mute"))
@@ -92,7 +92,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("unmute", "Unmute a user")]
         [CommandPermission("mute")]
-        public void UnmuteUser(StarboundClient client, string[] args)
+        public void UnmuteUser(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("mute"))
@@ -131,7 +131,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Event("chatSent")]
-        public void MonitorChatForMute(IPacket packet, StarboundClient client)
+        public void MonitorChatForMute(IPacket packet, SharpStarClient client)
         {
 
             if (client.Server.Player.UserAccount != null)

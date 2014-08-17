@@ -20,7 +20,7 @@ namespace ServerManagementPlugin.Commands
 
         [CommandPermission("server")]
         [Command("server", "Server Management")]
-        public void Server(StarboundClient client, string[] args)
+        public void Server(SharpStarClient client, string[] args)
         {
 
             if (!client.CanUserAccess("server", true))
@@ -59,7 +59,7 @@ namespace ServerManagementPlugin.Commands
 
                             if (!string.IsNullOrEmpty(ServerManagement.Config.ConfigFile.ServerRestartMessage))
                             {
-                                foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                foreach (SharpStarServerClient cl in SharpStarMain.Instance.Server.Clients)
                                 {
                                     cl.PlayerClient.SendChatMessage("Server", ServerManagement.Config.ConfigFile.ServerRestartMessage);
                                 }
@@ -97,7 +97,7 @@ namespace ServerManagementPlugin.Commands
                                     else
                                         Logger.Info(ts2.TotalDays + " days until restart...");
 
-                                    foreach (StarboundServerClient cl in SharpStarMain.Instance.Server.Clients)
+                                    foreach (SharpStarServerClient cl in SharpStarMain.Instance.Server.Clients)
                                     {
 
                                         if (ts2.TotalMinutes <= 1)

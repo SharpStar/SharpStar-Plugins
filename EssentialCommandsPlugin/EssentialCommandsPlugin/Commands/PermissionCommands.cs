@@ -33,7 +33,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Event("chatReceived")]
-        public void OnChatReceived(IPacket packet, StarboundClient client)
+        public void OnChatReceived(IPacket packet, SharpStarClient client)
         {
 
             ChatReceivedPacket csp = (ChatReceivedPacket)packet;
@@ -51,7 +51,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [Event("connectionResponse")]
-        public void OnConnect(IPacket packet, StarboundClient client)
+        public void OnConnect(IPacket packet, SharpStarClient client)
         {
 
             ConnectionResponsePacket crp = (ConnectionResponsePacket)packet;
@@ -71,7 +71,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("addperm", "Give a user permissions to a set of commands")]
         [CommandPermission("permissions")]
-        public void AddPermission(StarboundClient client, string[] args)
+        public void AddPermission(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "addperm"))
@@ -106,7 +106,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("removeperm", "Remove a user's permission")]
         [CommandPermission("permissions")]
-        public void RemovePermission(StarboundClient client, string[] args)
+        public void RemovePermission(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "removeperm"))
@@ -143,7 +143,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("creategroup", "Create a permission group")]
         [CommandPermission("permissions")]
-        public void CreateGroup(StarboundClient client, string[] args)
+        public void CreateGroup(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "creategroup"))
@@ -175,7 +175,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setgroupprefix", "Sets a group's prefix")]
         [CommandPermission("permissions")]
-        public void SetGroupPrefix(StarboundClient client, string[] args)
+        public void SetGroupPrefix(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setgroupprefix"))
@@ -221,7 +221,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("deletegroup", "Delete a permission group")]
         [CommandPermission("permissions")]
-        public void DeleteGroup(StarboundClient client, string[] args)
+        public void DeleteGroup(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "deletegroup"))
@@ -262,7 +262,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("addgroupperm", "Add a permission to a group")]
         [CommandPermission("permissions")]
-        public void AddGroupPermission(StarboundClient client, string[] args)
+        public void AddGroupPermission(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "addgroupperm"))
@@ -292,7 +292,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setgroupcmdlimit")]
         [CommandPermission("permissions")]
-        public void SetGroupCommandLimit(StarboundClient client, string[] args)
+        public void SetGroupCommandLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setgroupcmdlimit"))
@@ -342,7 +342,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("delgroupcmdlimit")]
         [CommandPermission("permissions")]
-        public void RemoveGroupCommandLimit(StarboundClient client, string[] args)
+        public void RemoveGroupCommandLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "delgroupcmdlimit"))
@@ -381,7 +381,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("removegroupperm", "Remove a permission from a group")]
         [CommandPermission("permissions")]
-        public void RemoveGroupPermission(StarboundClient client, string[] args)
+        public void RemoveGroupPermission(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "removegroupperm"))
@@ -411,7 +411,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setplanetlimit")]
         [CommandPermission("permissions")]
-        public void SetPlanetLimit(StarboundClient client, string[] args)
+        public void SetPlanetLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
@@ -456,7 +456,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("delplanetlimit")]
         [CommandPermission("permissions")]
-        public void RemovePlanetLimit(StarboundClient client, string[] args)
+        public void RemovePlanetLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
@@ -490,7 +490,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setdefaultgroup", "Set the default group")]
         [CommandPermission("permissions")]
-        public void SetDefaultGroup(StarboundClient client, string[] args)
+        public void SetDefaultGroup(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setdefaultgroup"))
@@ -520,7 +520,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setusergroup", "Set a user's group")]
         [CommandPermission("permissions")]
-        public void SetUserGroup(StarboundClient client, string[] args)
+        public void SetUserGroup(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setusergroup"))

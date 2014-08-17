@@ -15,7 +15,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("kill", "Kill a player")]
         [CommandPermission("kill")]
-        public void KillPlayer(StarboundClient client, string[] args)
+        public void KillPlayer(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "kill"))
