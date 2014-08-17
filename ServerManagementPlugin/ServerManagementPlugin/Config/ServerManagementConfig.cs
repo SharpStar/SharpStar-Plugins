@@ -25,7 +25,7 @@ namespace ServerManagementPlugin.Config
         private void SetDefaults()
         {
             ConfigFile.AutoRestartOnCrash = true;
-            ConfigFile.ServerCheckInterval = 1;
+            ConfigFile.ServerCheckInterval = 5;
             ConfigFile.ServerExecutable = String.Empty;
 
             Save();

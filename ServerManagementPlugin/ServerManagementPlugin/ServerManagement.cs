@@ -19,7 +19,7 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9")]
+[assembly: Addin("ServerManagement", Version = "1.0.9.1")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.0")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -186,6 +186,8 @@ namespace ServerManagementPlugin
                     socket.Connect(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Config.ConfigFile.ServerPort);
                 else
                     socket.Connect(bind, SharpStarMain.Instance.Config.ConfigFile.ServerPort);
+
+                socket.Shutdown(SocketShutdown.Send);
 
                 toReturn = true;
             }
