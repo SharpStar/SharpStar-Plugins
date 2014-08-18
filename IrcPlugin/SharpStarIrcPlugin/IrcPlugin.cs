@@ -15,11 +15,11 @@ using SharpStar.Lib.Server;
 using SharpStarIrcPlugin.Commands;
 using SharpStarIrcPlugin.QueryCommands;
 
-[assembly: Addin("Irc", Version = "1.0.5")]
+[assembly: Addin("Irc", Version = "1.0.5.1")]
 [assembly: AddinDescription("An IRC plugin for SharpStar")]
 [assembly: ImportAddinAssembly("Meebey.SmartIrc4net.dll")]
 [assembly: ImportAddinAssembly("StarkSoftProxy.dll")]
-[assembly: AddinProperty("sharpstar", "0.2.3.0")]
+[assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
 namespace SharpStarIrcPlugin

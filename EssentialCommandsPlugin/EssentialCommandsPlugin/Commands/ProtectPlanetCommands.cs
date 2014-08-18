@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Database;
@@ -333,18 +334,18 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (EntityCreatePacket)packet;
 
-                                foreach (Entity ent in ec.Entities)
+                                Parallel.ForEach(ec.Entities, (ent, state) =>
                                 {
-                                    if (ent.EntityType == EntityType.Projectile && ent is ProjectileEntity)
+                                    if (ent.EntityType == EntityType.Projectile)
                                     {
 
                                         ProjectileEntity pent = (ProjectileEntity)ent;
 
                                         if (pent.ThrowerEntityId != client.Server.Player.EntityId)
-                                            continue;
+                                            return;
 
                                         if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
-                                            continue;
+                                            return;
 
                                         if (string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.ReplaceProjectileWith))
                                         {
@@ -356,13 +357,13 @@ namespace EssentialCommandsPlugin.Commands
 
                                             packet.Ignore = true;
 
-                                            break;
+                                            state.Break();
                                         }
 
                                         pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
 
                                     }
-                                }
+                                });
 
                             }
                             else if (p == KnownPacket.SpawnEntity)
@@ -372,7 +373,7 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (SpawnEntityPacket)packet;
 
-                                foreach (SpawnedEntity ent in ec.SpawnedEntities)
+                                Parallel.ForEach(ec.SpawnedEntities, (ent, state) =>
                                 {
                                     if (ent.EntityType == EntityType.Projectile && ent is SpawnedProjectile)
                                     {
@@ -382,7 +383,7 @@ namespace EssentialCommandsPlugin.Commands
                                         {
                                             packet.Ignore = true;
 
-                                            break;
+                                            state.Break();
                                         }
                                     }
                                     else if (ent.EntityType == EntityType.Object || ent.EntityType == EntityType.Plant || ent.EntityType == EntityType.PlantDrop || ent.EntityType == EntityType.Monster
@@ -390,9 +391,9 @@ namespace EssentialCommandsPlugin.Commands
                                     {
                                         packet.Ignore = true;
 
-                                        break;
+                                        state.Break();
                                     }
-                                }
+                                });
 
                             }
                             else
@@ -419,7 +420,7 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (EntityCreatePacket)packet;
 
-                                foreach (Entity ent in ec.Entities)
+                                Parallel.ForEach(ec.Entities, (ent, state) =>
                                 {
                                     if (ent.EntityType == EntityType.Projectile)
                                     {
@@ -427,10 +428,10 @@ namespace EssentialCommandsPlugin.Commands
                                         ProjectileEntity pent = (ProjectileEntity)ent;
 
                                         if (pent.ThrowerEntityId != client.Server.Player.EntityId)
-                                            continue;
+                                            return;
 
                                         if (EssentialCommands.Config.ConfigFile.ProjectileWhitelist.Any(x => x.Equals(pent.Projectile, StringComparison.OrdinalIgnoreCase)))
-                                            continue;
+                                            return;
 
                                         if (string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.ReplaceProjectileWith))
                                         {
@@ -442,13 +443,13 @@ namespace EssentialCommandsPlugin.Commands
 
                                             packet.Ignore = true;
 
-                                            break;
+                                            state.Break();
                                         }
 
                                         pent.Projectile = EssentialCommands.Config.ConfigFile.ReplaceProjectileWith;
 
                                     }
-                                }
+                                });
                             }
                             else if (p == KnownPacket.SpawnEntity)
                             {
@@ -457,9 +458,9 @@ namespace EssentialCommandsPlugin.Commands
 
                                 var ec = (SpawnEntityPacket)packet;
 
-                                foreach (SpawnedEntity ent in ec.SpawnedEntities)
+                                Parallel.ForEach(ec.SpawnedEntities, (ent, state) =>
                                 {
-                                    if (ent.EntityType == EntityType.Projectile)
+                                    if (ent.EntityType == EntityType.Projectile && ent is SpawnedProjectile)
                                     {
                                         SpawnedProjectile sp = (SpawnedProjectile)ent;
 
@@ -467,7 +468,7 @@ namespace EssentialCommandsPlugin.Commands
                                         {
                                             packet.Ignore = true;
 
-                                            break;
+                                            state.Break();
                                         }
                                     }
                                     else if (ent.EntityType == EntityType.Object || ent.EntityType == EntityType.Plant || ent.EntityType == EntityType.PlantDrop || ent.EntityType == EntityType.Monster
@@ -475,9 +476,9 @@ namespace EssentialCommandsPlugin.Commands
                                     {
                                         packet.Ignore = true;
 
-                                        break;
+                                        state.Break();
                                     }
-                                }
+                                });
 
                             }
                             else
