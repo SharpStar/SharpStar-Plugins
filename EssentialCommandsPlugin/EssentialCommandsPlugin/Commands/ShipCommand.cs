@@ -157,7 +157,7 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Event("warpCommand")]
+        [PacketEvent(KnownPacket.WarpCommand)]
         public void WarpCommandRecv(IPacket packet, SharpStarClient client)
         {
 

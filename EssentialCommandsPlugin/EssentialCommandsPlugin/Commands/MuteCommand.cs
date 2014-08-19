@@ -130,7 +130,7 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Event("chatSent")]
+        [PacketEvent(KnownPacket.ChatSent)]
         public void MonitorChatForMute(IPacket packet, SharpStarClient client)
         {
 

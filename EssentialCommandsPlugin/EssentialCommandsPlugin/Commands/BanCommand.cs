@@ -70,7 +70,7 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Event("connectionResponse")]
+        [PacketEvent(KnownPacket.ConnectionResponse)]
         public void ConnectionResponse(IPacket packet, SharpStarClient client)
         {
 

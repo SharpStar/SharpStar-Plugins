@@ -32,7 +32,7 @@ namespace EssentialCommandsPlugin.Commands
             Groups.AddRange(EssentialCommands.Database.GetGroups());
         }
 
-        [Event("chatReceived")]
+        [PacketEvent(KnownPacket.ChatReceived)]
         public void OnChatReceived(IPacket packet, SharpStarClient client)
         {
 
@@ -50,7 +50,7 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Event("connectionResponse")]
+        [PacketEvent(KnownPacket.ConnectionResponse)]
         public void OnConnect(IPacket packet, SharpStarClient client)
         {
 

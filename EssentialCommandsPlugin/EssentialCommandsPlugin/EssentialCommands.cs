@@ -18,7 +18,7 @@ using SharpStar.Lib.Server;
 
 [assembly: Addin("EssentialCommands", Version = "1.0.5.1")]
 [assembly: AddinDescription("A command plugin that is essential")]
-[assembly: AddinProperty("sharpstar", "0.2.3.1")]
+[assembly: AddinProperty("sharpstar", "0.2.3.2")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
 
 namespace EssentialCommandsPlugin

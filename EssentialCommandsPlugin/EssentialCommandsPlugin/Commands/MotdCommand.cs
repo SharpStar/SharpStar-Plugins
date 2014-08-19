@@ -29,7 +29,7 @@ namespace EssentialCommandsPlugin.Commands
 
         }
 
-        [Event("afterConnectionResponse")]
+        [AfterPacketEvent(KnownPacket.ConnectionResponse)]
         public void AfterConnectionResponse(IPacket packet, SharpStarClient client)
         {
 
