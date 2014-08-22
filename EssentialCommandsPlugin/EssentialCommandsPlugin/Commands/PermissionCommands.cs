@@ -38,7 +38,7 @@ namespace EssentialCommandsPlugin.Commands
 
             ChatReceivedPacket csp = (ChatReceivedPacket)packet;
 
-            var plr = SharpStarMain.Instance.Server.Clients.SingleOrDefault(p => p.Player != null && p.Player.Name == csp.Name);
+            var plr = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player != null && p.Player.ClientId == csp.ClientId);
 
             if (plr != null && plr.Player.UserGroupId.HasValue)
             {
@@ -54,9 +54,12 @@ namespace EssentialCommandsPlugin.Commands
         public void OnConnect(IPacket packet, SharpStarClient client)
         {
 
+            if (client.Server.Player == null)
+                return;
+
             ConnectionResponsePacket crp = (ConnectionResponsePacket)packet;
 
-            foreach (EssentialCommandsGroup group in Groups)
+            foreach (EssentialCommandsGroup group in Groups.ToList())
             {
                 if (!string.IsNullOrEmpty(group.Prefix) && client.Server.Player.Name.IndexOf(group.Prefix, StringComparison.OrdinalIgnoreCase) >= 0)
                 {

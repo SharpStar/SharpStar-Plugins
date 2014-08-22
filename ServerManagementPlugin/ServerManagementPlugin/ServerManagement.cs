@@ -19,7 +19,7 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9.2")]
+[assembly: Addin("ServerManagement", Version = "1.0.9.4")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -83,7 +83,7 @@ namespace ServerManagementPlugin
                 connTimer.Interval = TimeSpan.FromMinutes(Config.ConfigFile.ServerCheckInterval).TotalMilliseconds;
                 connTimer.Elapsed += (s, e) =>
                 {
-                    bool serverOnline = CheckServer();
+                    bool serverOnline = CheckServer() && CheckServerUDP();
 
                     if (serverOnline)
                     {
@@ -91,6 +91,10 @@ namespace ServerManagementPlugin
                         {
                             startingOrRestarting = false;
                         }
+                    }
+                    else
+                    {
+                        KillClients();
                     }
 
                     Process serverProc = GetStarboundProcess();
@@ -124,7 +128,6 @@ namespace ServerManagementPlugin
                             Logger.Error("Server instance not found. Starting it up!");
 
                             StartServer();
-
                         }
                     }
                     else if (serverOnline)
@@ -173,6 +176,28 @@ namespace ServerManagementPlugin
             }
         }
 
+        private static void KillClients()
+        {
+            foreach (SharpStarServerClient ssc in SharpStarMain.Instance.Server.Clients)
+            {
+                try
+                {
+                    ssc.PlayerClient.ForceDisconnect();
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    ssc.ServerClient.ForceDisconnect();
+                }
+                catch
+                {
+                }
+            }
+        }
+
         private bool CheckServer()
         {
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -187,11 +212,11 @@ namespace ServerManagementPlugin
                 else
                     socket.Connect(bind, SharpStarMain.Instance.Config.ConfigFile.ServerPort);
 
-                socket.Shutdown(SocketShutdown.Send);
+                socket.Shutdown(SocketShutdown.Both);
 
                 toReturn = true;
             }
-            catch (Exception)
+            catch
             {
                 toReturn = false;
             }
@@ -199,6 +224,46 @@ namespace ServerManagementPlugin
             {
                 socket.Close();
                 socket.Dispose();
+            }
+
+            return toReturn;
+
+        }
+
+        private bool CheckServerUDP()
+        {
+            bool toReturn;
+
+            UdpClient udpClient = new UdpClient();
+
+            try
+            {
+                string bind = SharpStarMain.Instance.Config.ConfigFile.StarboundBind;
+
+                IPEndPoint ipe;
+
+                if (string.IsNullOrEmpty(bind))
+                    ipe = new IPEndPoint(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Config.ConfigFile.ServerPort);
+                else
+                    ipe = new IPEndPoint(IPAddress.Parse(bind), SharpStarMain.Instance.Config.ConfigFile.ServerPort);
+
+                udpClient.Connect(ipe);
+
+                byte[] toSend = { 0xFF, 0xFF, 0xFF, 0xFF, 0x54, 0x53, 0x6F, 0x75, 0x72, 0x63, 0x65, 0x20, 0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65, 0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x00 };
+
+                udpClient.Send(toSend, toSend.Length, ipe);
+
+                byte[] recv = udpClient.Receive(ref ipe);
+
+                toReturn = recv.Length > 0;
+            }
+            catch
+            {
+                toReturn = false;
+            }
+            finally
+            {
+                udpClient.Close();
             }
 
             return toReturn;
@@ -303,6 +368,8 @@ namespace ServerManagementPlugin
                     startingOrRestarting = true;
                 }
 
+                KillClients();
+
                 if (MonoHelper.IsRunningOnMono())
                 {
 
@@ -364,7 +431,9 @@ namespace ServerManagementPlugin
             }
             else
             {
-                Logger.Warn("Starbound Server process not found!");
+                Logger.Warn("Starbound Server process not found! Starting it up...");
+
+                StartServer();
             }
 
             lock (locker)
@@ -429,16 +498,7 @@ namespace ServerManagementPlugin
 
             }
 
-            foreach (SharpStarServerClient ssc in SharpStarMain.Instance.Server.Clients.ToList())
-            {
-                try
-                {
-                    ssc.PlayerClient.ForceDisconnect();
-                }
-                catch
-                {
-                }
-            }
+            KillClients();
 
         }
 

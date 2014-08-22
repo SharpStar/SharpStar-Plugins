@@ -78,23 +78,19 @@ namespace EssentialCommandsPlugin.Commands
 
             var bans = EssentialCommands.Database.GetBans();
 
-            if (bans.Any(p => p.UUID == client.Server.Player.UUID))
+            if (bans.Any(p => client.Server.Player != null && p.UUID == client.Server.Player.UUID))
             {
-
                 crp.Success = false;
                 crp.RejectionReason = "You are banned!";
 
                 Console.WriteLine("Banned player {0} ({1}) tried to join", client.Server.Player.Name, client.Server.Player.UUID);
-
             }
-            else if (client.Server.Player.UserAccount != null && bans.Any(p => p.UserAccountId.HasValue && p.UserAccountId.Value == client.Server.Player.UserAccount.Id))
+            else if (client.Server.Player != null && client.Server.Player.UserAccount != null && bans.Any(p => p.UserAccountId.HasValue && p.UserAccountId.Value == client.Server.Player.UserAccount.Id))
             {
-
                 crp.Success = false;
                 crp.RejectionReason = "You are banned!";
 
                 Console.WriteLine("Banned user {0} ({1}) tried to join", client.Server.Player.UserAccount.Username, client.Server.Player.UUID);
-
             }
 
         }
