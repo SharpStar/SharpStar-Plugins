@@ -27,6 +27,7 @@ namespace EssentialCommandsPlugin
             var conn = new SQLiteConnection(DatabaseName);
 
             conn.CreateTable<EssentialCommandsBan>();
+            conn.CreateTable<EssentialCommandsBanUUID>();
             conn.CreateTable<EssentialCommandsShip>();
             conn.CreateTable<EssentialCommandsShipUser>();
             conn.CreateTable<EssentialCommandsMute>();
@@ -211,7 +212,6 @@ namespace EssentialCommandsPlugin
 
         public List<EssentialCommandsBan> GetBans()
         {
-
             var conn = new SQLiteConnection(DatabaseName);
 
             var tbl = conn.Table<EssentialCommandsBan>();
@@ -222,40 +222,104 @@ namespace EssentialCommandsPlugin
             conn.Dispose();
 
             return bans;
-
         }
 
-        public void AddBan(string uuid, int? userId)
+        public EssentialCommandsBan GetBanByUserId(int userId)
+        {
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBan>();
+
+            var ban = tbl.FirstOrDefault(p => p.UserAccountId == userId);
+
+            conn.Close();
+            conn.Dispose();
+
+            return ban;
+        }
+
+        public EssentialCommandsBan GetBan(int id)
+        {
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBan>();
+
+            EssentialCommandsBan ban = tbl.SingleOrDefault(p => p.Id == id);
+
+            conn.Close();
+            conn.Dispose();
+
+            return ban;
+        }
+
+        public List<EssentialCommandsBanUUID> GetBansUuid(int banId)
+        {
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBanUUID>();
+
+            var bans = tbl.Where(p => p.BanId == banId).ToList();
+
+            conn.Close();
+            conn.Dispose();
+
+            return bans;
+        }
+
+        public EssentialCommandsBanUUID GetBansUuid(string uuid)
+        {
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBanUUID>();
+
+            var ban = tbl.FirstOrDefault(p => p.UUID == uuid);
+
+            conn.Close();
+            conn.Dispose();
+
+            return ban;
+        }
+
+        public void AddBan(string uuid, string reason, DateTime? expireTime, int? userId)
         {
 
             var conn = new SQLiteConnection(DatabaseName);
 
             var tbl = conn.Table<EssentialCommandsBan>();
 
-            var b = tbl.SingleOrDefault(p => p.UUID == uuid || (p.UserAccountId.HasValue && userId.HasValue && userId.Value == p.UserAccountId.Value));
+            var b = tbl.SingleOrDefault(p => p.UserAccountId.HasValue && userId.HasValue && userId.Value == p.UserAccountId.Value);
 
+            int banId;
             if (b == null)
             {
-
                 EssentialCommandsBan ban = new EssentialCommandsBan();
-                ban.UUID = uuid;
+                ban.BanReason = reason;
+                ban.ExpirationTime = expireTime;
 
                 if (userId.HasValue)
                     ban.UserAccountId = userId.Value;
 
                 conn.Insert(ban);
 
+                banId = ban.Id;
             }
             else
             {
+                banId = b.Id;
 
-                b.UUID = uuid;
+                b.BanReason = reason;
+                b.ExpirationTime = expireTime;
 
                 if (userId.HasValue)
                     b.UserAccountId = userId;
 
                 conn.Update(b);
+            }
 
+            if (conn.Table<EssentialCommandsBanUUID>().All(p => p.UUID != uuid))
+            {
+                EssentialCommandsBanUUID ecUUid = new EssentialCommandsBanUUID { UUID = uuid, BanId = banId };
+                conn.InsertOrReplace(ecUUid);
             }
 
             conn.Close();
@@ -263,19 +327,67 @@ namespace EssentialCommandsPlugin
 
         }
 
-        public void RemoveBan(int userId)
+        public void RemoveBanByUserId(int userId)
         {
 
             var conn = new SQLiteConnection(DatabaseName);
 
             var tbl = conn.Table<EssentialCommandsBan>();
 
-            var user = tbl.SingleOrDefault(p => p.UserAccountId == userId);
+            var ban = tbl.SingleOrDefault(p => p.UserAccountId == userId);
 
-            if (user == null)
+            if (ban == null)
                 return;
 
-            conn.Delete(user);
+            var tbl2 = conn.Table<EssentialCommandsBanUUID>();
+
+            var uuidBans = tbl2.Where(p => p.BanId == ban.Id);
+
+            foreach (EssentialCommandsBanUUID uuidBan in uuidBans)
+            {
+                conn.Delete<EssentialCommandsBanUUID>(uuidBan.Id);
+            }
+
+            conn.Delete<EssentialCommandsBan>(ban.Id);
+
+            conn.Close();
+            conn.Dispose();
+
+        }
+
+        public void RemoveBan(int id)
+        {
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBanUUID>();
+
+            var uuidBans = tbl.Where(p => p.BanId == id);
+
+            foreach (EssentialCommandsBanUUID uuidBan in uuidBans)
+            {
+                conn.Delete<EssentialCommandsBanUUID>(uuidBan.Id);
+            }
+
+            conn.Delete<EssentialCommandsBan>(id);
+
+            conn.Close();
+            conn.Dispose();
+
+        }
+
+        public void RemoveBanUuid(string uuid)
+        {
+
+            var conn = new SQLiteConnection(DatabaseName);
+
+            var tbl = conn.Table<EssentialCommandsBanUUID>();
+
+            var ban = tbl.FirstOrDefault(p => p.UUID == uuid);
+
+            if (ban == null)
+                return;
+
+            conn.Delete(ban);
 
             conn.Close();
             conn.Dispose();

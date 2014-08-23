@@ -16,7 +16,7 @@ using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("EssentialCommands", Version = "1.0.5.5")]
+[assembly: Addin("EssentialCommands", Version = "1.0.5.7")]
 [assembly: AddinDescription("A command plugin that is essential")]
 [assembly: AddinProperty("sharpstar", "0.2.3.2")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -155,7 +155,7 @@ namespace EssentialCommandsPlugin
 
         }
 
-        public static void KickBanPlayer(SharpStarServerClient kickBanner, List<SharpStarServerClient> players, bool ban = false)
+        public static void KickBanPlayer(SharpStarServerClient kickBanner, List<SharpStarServerClient> players, bool ban = false, string banReason = "", DateTime? expireTime = null)
         {
 
             for (int i = 0; i < players.Count; i++)
@@ -178,7 +178,7 @@ namespace EssentialCommandsPlugin
                     {
                         plr.ServerClient.ClientDisconnected += (sender, e) =>
                         {
-                            if (e.Client.Connected)
+                            if (kickBanner.PlayerClient.Connected)
                                 kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been kicked!", plr.Player.Name));
 
                             Logger.Info("Player {0} has kicked by {1} ({2})", e.Client.Server.Player.Name, kickBanner.Player.Name, kickBanner.Player.UserAccount.Username);
@@ -192,11 +192,11 @@ namespace EssentialCommandsPlugin
                         if (plr.Player.UserAccount != null)
                             acctId = plr.Player.UserAccount.Id;
 
-                        Database.AddBan(plr.Player.UUID, acctId);
+                        Database.AddBan(plr.Player.UUID, banReason, expireTime, acctId);
 
                         plr.ServerClient.ClientDisconnected += (sender, e) =>
                         {
-                            if (e.Client.Connected)
+                            if (kickBanner.PlayerClient.Connected)
                                 kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been banned!", plr.Player.Name));
 
                             Logger.Info("Player {0} has been banned by {1} ({2})", e.Client.Server.Player.Name, kickBanner.Player.Name, kickBanner.Player.UserAccount.Username);

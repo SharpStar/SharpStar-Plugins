@@ -19,7 +19,7 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9.4")]
+[assembly: Addin("ServerManagement", Version = "1.0.9.5")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -251,7 +251,7 @@ namespace ServerManagementPlugin
 
                 byte[] toSend = { 0xFF, 0xFF, 0xFF, 0xFF, 0x54, 0x53, 0x6F, 0x75, 0x72, 0x63, 0x65, 0x20, 0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65, 0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x00 };
 
-                udpClient.Send(toSend, toSend.Length, ipe);
+                udpClient.Send(toSend, toSend.Length);
 
                 byte[] recv = udpClient.Receive(ref ipe);
 

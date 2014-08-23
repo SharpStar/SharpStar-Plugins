@@ -135,11 +135,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length != 1)
             {
-
                 client.SendChatMessage("Server", "Syntax: /addbuilder <username>");
 
                 return;
-
             }
 
             if (!EssentialCommands.CanUserAccess(client, "addbuilder"))
@@ -149,52 +147,41 @@ namespace EssentialCommandsPlugin.Commands
 
             if (user == null)
             {
-
                 client.SendChatMessage("Server", "There is no user by that name!");
 
                 return;
-
             }
 
             if (client.Server.Player.Coordinates == null || client.Server.Player.OnShip)
             {
-
                 client.SendChatMessage("Server", "You are not on a planet!");
 
-
                 return;
-
             }
 
             var planet = EssentialCommands.Database.GetProtectedPlanet(client.Server.Player.Coordinates);
 
             if (planet == null)
             {
-
                 client.SendChatMessage("Server", "Planet is not protected!");
 
                 return;
-
             }
 
             if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
             {
-
                 client.SendChatMessage("Server", "You do not own this planet!");
 
                 return;
-
             }
 
             EssentialCommandsBuilder builder = EssentialCommands.Database.GetPlanetBuilder(user.Id, planet.Id);
 
             if (builder != null)
             {
-
                 client.SendChatMessage("Server", "User is already a builder on this planet!");
 
                 return;
-
             }
 
             builder = EssentialCommands.Database.AddPlanetBuilder(planet, user.Id, planet.Id);
@@ -203,10 +190,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (builder != null)
             {
-                var x = _planets.FirstOrDefault(p => p.Key == planet);
+                var x = _planets.First(p => p.Key == planet);
 
-                if (x.Value.All(p => p.Id != builder.Id))
-                    x.Value.Add(builder);
+                x.Value.Add(builder);
             }
 
         }
@@ -232,66 +218,51 @@ namespace EssentialCommandsPlugin.Commands
 
             if (user == null)
             {
-
                 client.SendChatMessage("Server", "There is no user by that name!");
 
                 return;
-
             }
 
             if (client.Server.Player.Coordinates == null || client.Server.Player.OnShip)
             {
-
                 client.SendChatMessage("Server", "You are not on a planet!");
 
 
                 return;
-
             }
 
             var planet = EssentialCommands.Database.GetProtectedPlanet(client.Server.Player.Coordinates);
 
             if (planet == null)
             {
-
                 client.SendChatMessage("Server", "Planet is not protected!");
 
                 return;
-
             }
 
             if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
             {
-
                 client.SendChatMessage("Server", "You do not own this planet!");
 
                 return;
-
             }
 
             EssentialCommandsBuilder builder = EssentialCommands.Database.GetPlanetBuilder(user.Id, planet.Id);
 
             if (builder == null)
             {
-
                 client.SendChatMessage("Server", "The user is not a builder");
 
                 return;
-
             }
 
             EssentialCommands.Database.RemovePlanetBuilder(planet, user.Id, planet.Id);
 
             client.SendChatMessage("Server", String.Format("User {0} can no longer build on this planet", user.Username));
 
+            var x = _planets.First(p => p.Key == planet);
 
-            var x = _planets.FirstOrDefault(p => p.Key == planet);
-
-            if (x.Value != null)
-            {
-                x.Value.Remove(builder);
-            }
-
+            x.Value.RemoveAll(p => p.UserId == builder.UserId);
         }
 
         [PacketEvent(KnownPacket.ModifyTileList, KnownPacket.DamageTileGroup, KnownPacket.DamageTile, KnownPacket.ConnectWire, KnownPacket.DisconnectAllWires,
@@ -313,12 +284,12 @@ namespace EssentialCommandsPlugin.Commands
                     if (client.Server.Player.UserAccount.IsAdmin) //all admins are allowed to build
                         return;
 
-                    var planets = _planets.FirstOrDefault(w => w.Key == client.Server.Player.Coordinates);
+                    var planets = _planets.SingleOrDefault(w => w.Key == client.Server.Player.Coordinates);
 
                     if (planets.Value == null)
                         return;
 
-                    EssentialCommandsBuilder builder = planets.Value.FirstOrDefault(w => w.UserId == client.Server.Player.UserAccount.Id && w.Allowed);
+                    EssentialCommandsBuilder builder = planets.Value.SingleOrDefault(w => w.UserId == client.Server.Player.UserAccount.Id && w.Allowed);
 
                     if (builder == null && planets.Key.OwnerId != client.Server.Player.UserAccount.Id)
                     {
@@ -404,7 +375,7 @@ namespace EssentialCommandsPlugin.Commands
                 else
                 {
 
-                    var planets = _planets.FirstOrDefault(w => w.Key == client.Server.Player.Coordinates);
+                    var planets = _planets.SingleOrDefault(w => w.Key == client.Server.Player.Coordinates);
 
                     if (planets.Value != null)
                     {

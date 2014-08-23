@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using System;
+using SQLite;
 
 namespace EssentialCommandsPlugin
 {
@@ -8,7 +9,9 @@ namespace EssentialCommandsPlugin
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        public string UUID { get; set; }
+        public string BanReason { get; set; }
+
+        public DateTime? ExpirationTime { get; set; }
 
         public int? UserAccountId { get; set; }
 

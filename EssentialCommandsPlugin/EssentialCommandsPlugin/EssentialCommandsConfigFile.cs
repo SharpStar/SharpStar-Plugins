@@ -27,6 +27,9 @@ namespace EssentialCommandsPlugin
         [JsonProperty]
         public List<string> ProjectileWhitelist { get; set; }
 
+        [JsonProperty]
+        public string MaxTempBanTime { get; set; }
+
         public EssentialCommandsConfigFile()
         {
             Motd = String.Empty;
@@ -34,6 +37,7 @@ namespace EssentialCommandsPlugin
             AllowProjectiles = false;
             ReplaceProjectileWith = "snowball";
             ProjectileWhitelist = new List<string>();
+            MaxTempBanTime = "30d";
         }
 
     }
