@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Packets;
@@ -186,9 +187,9 @@ namespace EssentialCommandsPlugin.Commands
 
             EssentialCommandsBanUUID uuidBan = EssentialCommands.Database.GetBansUuid(client.Server.Player.UUID);
 
-            var test = EssentialCommands.Database.GetBans();
-
             string banReason = "You have been banned!";
+            string tempTemplate = EssentialCommands.Config.ConfigFile.TempBanTemplate;
+            string permTemplate = EssentialCommands.Config.ConfigFile.PermBanTemplate;
 
             if (uuidBan != null)
             {
@@ -205,6 +206,25 @@ namespace EssentialCommandsPlugin.Commands
                         if (!string.IsNullOrEmpty(ban.BanReason))
                         {
                             banReason = ban.BanReason;
+                        }
+
+                        if (!string.IsNullOrEmpty(tempTemplate) && !string.IsNullOrEmpty(permTemplate))
+                        {
+                            string tmp = banReason;
+
+                            if (ban.ExpirationTime.HasValue)
+                                banReason = tempTemplate;
+                            else
+                                banReason = permTemplate;
+
+                            banReason = banReason.Replace("<reason>", tmp);
+
+                            if (ban.ExpirationTime.HasValue)
+                                banReason = banReason.Replace("<time>", HumanizeTimeSpan(ban.ExpirationTime.Value - DateTime.Now));
+
+                            if (client.Server.Player.UserAccount != null)
+                                banReason = banReason.Replace("<account>", client.Server.Player.UserAccount.Username);
+
                         }
 
                         crp.Success = false;
@@ -236,6 +256,25 @@ namespace EssentialCommandsPlugin.Commands
                             banReason = ban.BanReason;
                         }
 
+                        if (!string.IsNullOrEmpty(tempTemplate) && !string.IsNullOrEmpty(permTemplate))
+                        {
+                            string tmp = banReason;
+
+                            if (ban.ExpirationTime.HasValue)
+                                banReason = tempTemplate;
+                            else
+                                banReason = permTemplate;
+
+                            banReason = banReason.Replace("<reason>", tmp);
+
+                            if (ban.ExpirationTime.HasValue)
+                                banReason = banReason.Replace("<time>", HumanizeTimeSpan(ban.ExpirationTime.Value - DateTime.Now));
+
+                            if (client.Server.Player.UserAccount != null)
+                                banReason = banReason.Replace("<account>", client.Server.Player.UserAccount.Username);
+
+                        }
+
                         crp.Success = false;
                         crp.RejectionReason = banReason;
 
@@ -244,6 +283,41 @@ namespace EssentialCommandsPlugin.Commands
                 }
 
             }
+
+        }
+
+        private static string HumanizeTimeSpan(TimeSpan ts)
+        {
+
+            StringBuilder sb = new StringBuilder();
+
+            if (ts.Days > 0)
+            {
+                sb.Append(ts.Days + " days ");
+
+                ts = ts.Subtract(TimeSpan.FromDays(ts.Days));
+            }
+
+            if (ts.Hours > 0)
+            {
+                sb.Append(ts.Hours + " hours ");
+                
+                ts = ts.Subtract(TimeSpan.FromHours(ts.Hours));
+            }
+
+            if (ts.Minutes > 0)
+            {
+                sb.Append(ts.Minutes + " minutes ");
+
+                ts = ts.Subtract(TimeSpan.FromMinutes(ts.Minutes));
+            }
+
+            if (ts.Seconds > 0)
+            {
+                sb.Append(ts.Seconds + " seconds");
+            }
+
+            return sb.ToString();
 
         }
 

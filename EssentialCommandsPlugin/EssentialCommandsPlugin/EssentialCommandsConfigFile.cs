@@ -30,6 +30,12 @@ namespace EssentialCommandsPlugin
         [JsonProperty]
         public string MaxTempBanTime { get; set; }
 
+        [JsonProperty]
+        public string TempBanTemplate { get; set; }
+
+        [JsonProperty]
+        public string PermBanTemplate { get; set; }
+
         public EssentialCommandsConfigFile()
         {
             Motd = String.Empty;
@@ -38,6 +44,11 @@ namespace EssentialCommandsPlugin
             ReplaceProjectileWith = "snowball";
             ProjectileWhitelist = new List<string>();
             MaxTempBanTime = "30d";
+            TempBanTemplate = @"You have been banned!
+<reason>
+Time Left: <time>";
+            PermBanTemplate = @"You have been permanently banned from this server!
+<reason>";
         }
 
     }
