@@ -15,6 +15,8 @@ namespace EssentialCommandsPlugin
 
         public int BanId { get; set; }
 
+        public string PlayerName { get; set; }
+
         public string UUID { get; set; }
 
     }

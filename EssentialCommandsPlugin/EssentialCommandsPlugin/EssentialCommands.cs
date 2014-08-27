@@ -192,7 +192,7 @@ namespace EssentialCommandsPlugin
                         if (plr.Player.UserAccount != null)
                             acctId = plr.Player.UserAccount.Id;
 
-                        Database.AddBan(plr.Player.UUID, banReason, expireTime, acctId);
+                        Database.AddBan(plr.Player.UUID, plr.Player.Name, banReason, expireTime, acctId);
 
                         plr.ServerClient.ClientDisconnected += (sender, e) =>
                         {

@@ -280,7 +280,7 @@ namespace EssentialCommandsPlugin
             return ban;
         }
 
-        public void AddBan(string uuid, string reason, DateTime? expireTime, int? userId)
+        public void AddBan(string uuid, string playerName, string reason, DateTime? expireTime, int? userId)
         {
 
             var conn = new SQLiteConnection(DatabaseName);
@@ -318,7 +318,7 @@ namespace EssentialCommandsPlugin
 
             if (conn.Table<EssentialCommandsBanUUID>().All(p => p.UUID != uuid))
             {
-                EssentialCommandsBanUUID ecUUid = new EssentialCommandsBanUUID { UUID = uuid, BanId = banId };
+                EssentialCommandsBanUUID ecUUid = new EssentialCommandsBanUUID { UUID = uuid, BanId = banId, PlayerName = playerName };
                 conn.InsertOrReplace(ecUUid);
             }
 

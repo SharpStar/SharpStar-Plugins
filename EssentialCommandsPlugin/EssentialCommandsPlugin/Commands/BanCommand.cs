@@ -225,6 +225,9 @@ namespace EssentialCommandsPlugin.Commands
                             if (client.Server.Player.UserAccount != null)
                                 banReason = banReason.Replace("<account>", client.Server.Player.UserAccount.Username);
 
+                            if (!string.IsNullOrEmpty(uuidBan.PlayerName))
+                                banReason = banReason.Replace("<player>", uuidBan.PlayerName);
+
                         }
 
                         crp.Success = false;

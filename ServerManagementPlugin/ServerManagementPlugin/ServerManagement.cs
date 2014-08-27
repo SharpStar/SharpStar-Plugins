@@ -19,7 +19,7 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9.5")]
+[assembly: Addin("ServerManagement", Version = "1.0.9.6")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -298,14 +298,16 @@ namespace ServerManagementPlugin
                 return;
             }
 
-            Process[] procs = Process.GetProcesses().Where(p => p.ProcessName.Contains("starbound_server")).ToArray();
+            Process[] procs = Process.GetProcesses();
 
-            if (procs.Length > 0)
+            foreach (Process proc in procs)
             {
-                Logger.Error("Server is already running!");
-
-                return;
-
+                if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                {
+                    Logger.Error("Server is already running!");
+                 
+                    return;
+                }
             }
 
             Logger.Info("Starting Server...");
