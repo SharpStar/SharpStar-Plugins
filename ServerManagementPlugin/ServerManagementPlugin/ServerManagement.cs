@@ -19,7 +19,7 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9.6")]
+[assembly: Addin("ServerManagement", Version = "1.0.9.7")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -272,12 +272,17 @@ namespace ServerManagementPlugin
 
         public static Process GetStarboundProcess()
         {
-            Process[] procs = Process.GetProcesses().Where(p => p.ProcessName.Contains("starbound_server")).ToArray();
+            Process[] procs = Process.GetProcesses();
 
-            if (procs.Length == 0)
-                return null;
+            foreach (Process proc in procs)
+            {
+                if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                {
+                    return proc;
+                }
+            }
 
-            return procs[0];
+            return null;
         }
 
         public static void StartServer()
@@ -305,7 +310,7 @@ namespace ServerManagementPlugin
                 if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
                 {
                     Logger.Error("Server is already running!");
-                 
+
                     return;
                 }
             }
@@ -346,16 +351,20 @@ namespace ServerManagementPlugin
 
         public static void RestartServer()
         {
-            Process[] procs = Process.GetProcesses().Where(p => p.ProcessName.Contains("starbound_server")).ToArray();
 
-            if (procs.Length > 1)
+            Process[] procs = Process.GetProcesses();
+            Process serverProc = null;
+
+            foreach (Process proc in procs)
             {
-                Logger.Error("Found more than one process containing the name starbound_server!");
+                if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                {
+                    serverProc = proc;
+                }
             }
-            else if (procs.Length == 1)
-            {
 
-                Process serverProc = procs[0];
+            if (serverProc != null)
+            {
 
                 string fileName = FindProcessFileName(serverProc.Id);
 
@@ -449,7 +458,11 @@ namespace ServerManagementPlugin
         {
 
             if (serverProc == null || serverProc.HasExited)
+            {
+                Logger.Error("The server is not currently online!");
+
                 return;
+            }
 
             lock (locker)
             {
