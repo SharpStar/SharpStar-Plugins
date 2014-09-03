@@ -19,7 +19,7 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9.7")]
+[assembly: Addin("ServerManagement", Version = "1.0.9.8")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -90,6 +90,7 @@ namespace ServerManagementPlugin
                         lock (locker)
                         {
                             startingOrRestarting = false;
+                            shutdownRequested = false;
                         }
                     }
                     else
@@ -255,7 +256,13 @@ namespace ServerManagementPlugin
 
                 byte[] recv = udpClient.Receive(ref ipe);
 
-                toReturn = recv.Length > 0;
+                using (MemoryStream ms = new MemoryStream(recv))
+                {
+                    A2SInfoResponse.FromStream(ms);
+                }
+
+                toReturn = true;
+
             }
             catch
             {
@@ -276,9 +283,15 @@ namespace ServerManagementPlugin
 
             foreach (Process proc in procs)
             {
-                if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                try
                 {
-                    return proc;
+                    if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                    {
+                        return proc;
+                    }
+                }
+                catch
+                {
                 }
             }
 
@@ -307,11 +320,17 @@ namespace ServerManagementPlugin
 
             foreach (Process proc in procs)
             {
-                if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                try
                 {
-                    Logger.Error("Server is already running!");
+                    if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                    {
+                        Logger.Error("Server is already running!");
 
-                    return;
+                        return;
+                    }
+                }
+                catch
+                {
                 }
             }
 
@@ -357,9 +376,15 @@ namespace ServerManagementPlugin
 
             foreach (Process proc in procs)
             {
-                if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                try
                 {
-                    serverProc = proc;
+                    if (!proc.HasExited && proc.ProcessName.Contains("starbound_server"))
+                    {
+                        serverProc = proc;
+                    }
+                }
+                catch
+                {
                 }
             }
 

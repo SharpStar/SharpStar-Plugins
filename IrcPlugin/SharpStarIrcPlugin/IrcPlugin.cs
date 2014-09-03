@@ -15,7 +15,7 @@ using SharpStar.Lib.Server;
 using SharpStarIrcPlugin.Commands;
 using SharpStarIrcPlugin.QueryCommands;
 
-[assembly: Addin("Irc", Version = "1.0.5.1")]
+[assembly: Addin("Irc", Version = "1.0.5.2")]
 [assembly: AddinDescription("An IRC plugin for SharpStar")]
 [assembly: ImportAddinAssembly("Meebey.SmartIrc4net.dll")]
 [assembly: ImportAddinAssembly("StarkSoftProxy.dll")]
@@ -74,9 +74,11 @@ namespace SharpStarIrcPlugin
 
             _running = false;
 
-            RegisterEvent("chatSent", ChatSent);
-            RegisterEvent("clientConnected", ClientConnected);
-            RegisterEvent("clientDisconnected", ClientDisconnected);
+            //RegisterEvent("chatSent", ChatSent);
+            //RegisterEvent("clientConnected", ClientConnected);
+            //RegisterEvent("clientDisconnected", ClientDisconnected);
+
+            RegisterEventObject(this);
 
             AuthenticatedUsers = new Dictionary<string, SharpStarUser>();
 
@@ -266,7 +268,8 @@ namespace SharpStarIrcPlugin
 
         }
 
-        private void ChatSent(IPacket packet, SharpStarClient client)
+        [PacketEvent(KnownPacket.ChatSent)]
+        public void ChatSent(IPacket packet, SharpStarClient client)
         {
 
             var csp = packet as ChatSentPacket;
@@ -282,7 +285,8 @@ namespace SharpStarIrcPlugin
             }
         }
 
-        private void ClientConnected(IPacket packet, SharpStarClient client)
+        [PacketEvent(KnownPacket.ClientConnect)]
+        public void ClientConnected(IPacket packet, SharpStarClient client)
         {
 
             var ccp = packet as ClientConnectPacket;
@@ -299,7 +303,8 @@ namespace SharpStarIrcPlugin
 
         }
 
-        private void ClientDisconnected(IPacket packet, SharpStarClient client)
+        [PacketEvent(KnownPacket.ClientDisconnect)]
+        public void ClientDisconnected(IPacket packet, SharpStarClient client)
         {
 
             var cdp = packet as ClientDisconnectPacket;
