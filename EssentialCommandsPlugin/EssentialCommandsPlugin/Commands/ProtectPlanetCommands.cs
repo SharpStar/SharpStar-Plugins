@@ -267,7 +267,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [PacketEvent(KnownPacket.ModifyTileList, KnownPacket.DamageTileGroup, KnownPacket.DamageTile, KnownPacket.ConnectWire, KnownPacket.DisconnectAllWires,
             KnownPacket.EntityCreate, KnownPacket.SpawnEntity, KnownPacket.TileLiquidUpdate)]
-        public void OnTryBuild(IPacket packet, SharpStarClient client)
+        public async void OnTryBuild(IPacket packet, SharpStarClient client)
         {
 
             if (_planets == null || _planets.Count == 0)
@@ -323,7 +323,7 @@ namespace EssentialCommandsPlugin.Commands
 
                                     if (string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.ReplaceProjectileWith))
                                     {
-                                        client.Server.PlayerClient.SendPacket(new EntityDestroyPacket
+                                        await client.Server.PlayerClient.SendPacket(new EntityDestroyPacket
                                         {
                                             EntityId = ent.EntityId,
                                             Unknown = new byte[0]
@@ -415,7 +415,7 @@ namespace EssentialCommandsPlugin.Commands
 
                                     if (string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.ReplaceProjectileWith))
                                     {
-                                        client.Server.PlayerClient.SendPacket(new EntityDestroyPacket
+                                        await client.Server.PlayerClient.SendPacket(new EntityDestroyPacket
                                         {
                                             EntityId = ent.EntityId,
                                             Unknown = new byte[0]
