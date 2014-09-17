@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using EssentialCommandsPlugin.Db;
+using EssentialCommandsPlugin.DbModels;
+using NHibernate.Linq;
 using SharpStar.Lib;
 using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
@@ -13,7 +17,7 @@ namespace EssentialCommandsPlugin.Commands
     {
 
         [Command("ship", "Set your ship's protection status")]
-        public void Ship(SharpStarClient client, string[] args)
+        public async Task Ship(SharpStarClient client, string[] args)
         {
 
             if (client.Server.Player.UserAccount == null)
@@ -30,135 +34,157 @@ namespace EssentialCommandsPlugin.Commands
 
             string cmd = args[0];
 
-            if (args.Length == 1)
+            using (var session = EssentialsDb.CreateSession())
             {
-
-                EssentialCommandsShip ship = EssentialCommands.Database.GetShip(client.Server.Player.UserAccount.Id);
-
-                if (ship == null)
+                using (var transaction = session.BeginTransaction())
                 {
-                    ship = EssentialCommands.Database.AddShip(client.Server.Player.UserAccount.Id);
-                }
-
-                if (cmd.Equals("public", StringComparison.OrdinalIgnoreCase))
-                {
-
-                    ship.Public = true;
-                    EssentialCommands.Database.UpdateShip(ship);
-
-                    client.SendChatMessage("Server", "Your ship is now public!");
-
-                }
-                else if (cmd.Equals("private", StringComparison.OrdinalIgnoreCase))
-                {
-
-                    ship.Public = false;
-                    EssentialCommands.Database.UpdateShip(ship);
-
-                    client.SendChatMessage("Server", "Your ship is now private!");
-
-                    foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
+                    if (args.Length == 1)
                     {
-                        if (!string.IsNullOrEmpty(cl.Player.PlayerShip) && cl.Player.PlayerShip.Equals(client.Server.Player.Name, StringComparison.OrdinalIgnoreCase))
+
+                        Ship ship = session.Query<Ship>().SingleOrDefault(p => p.OwnerUserAccountId == client.Server.Player.UserAccount.Id);
+
+                        if (ship == null)
+                        {
+                            ship = new Ship
+                            {
+                                OwnerUserAccountId = client.Server.Player.UserAccount.Id
+                            };
+
+                            session.Save(ship);
+                        }
+
+                        if (cmd.Equals("public", StringComparison.OrdinalIgnoreCase))
                         {
 
-                            if (cl.Player.UserAccount == null)
+                            ship.Public = true;
+
+                            session.SaveOrUpdate(ship);
+
+                            client.SendChatMessage("Server", "Your ship is now public!");
+
+                        }
+                        else if (cmd.Equals("private", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ship.Public = false;
+
+                            session.SaveOrUpdate(ship);
+
+                            client.SendChatMessage("Server", "Your ship is now private!");
+
+                            foreach (var cl in SharpStarMain.Instance.Server.Clients)
                             {
+                                if (!string.IsNullOrEmpty(cl.Player.PlayerShip) && cl.Player.PlayerShip.Equals(client.Server.Player.Name, StringComparison.OrdinalIgnoreCase))
+                                {
 
-                                cl.PlayerClient.SendChatMessage("Server", "This ship is now private. Goodbye.");
+                                    if (cl.Player.UserAccount == null)
+                                    {
 
-                                cl.ServerClient.WarpTo(cl.Player);
+                                        cl.PlayerClient.SendChatMessage("Server", "This ship is now private. Goodbye.");
 
-                                continue;
+                                        await cl.ServerClient.WarpTo(cl.Player);
 
-                            }
+                                        continue;
 
-                            if (cl.Player.UserAccount.Id == ship.OwnerUserAccountId || EssentialCommands.IsAdmin(cl.PlayerClient))
-                                continue;
+                                    }
 
-                            EssentialCommandsShipUser user = EssentialCommands.Database.GetShipUser(cl.Player.UserAccount.Id, ship.Id);
+                                    if (cl.Player.UserAccount.Id == ship.OwnerUserAccountId || EssentialCommands.IsAdmin(cl.PlayerClient))
+                                        continue;
 
-                            if (user == null || !user.HasAccess)
-                            {
-                                cl.PlayerClient.SendChatMessage("Server", "This ship is now private. Goodbye.");
+                                    ShipUser shipUser = session.Query<ShipUser>().SingleOrDefault(p => p.Ship.Id == ship.Id && p.UserAccountId == client.Server.Player.UserAccount.Id);
 
-                                cl.ServerClient.WarpTo(cl.Player);
+                                    if (shipUser == null || !shipUser.HasAccess)
+                                    {
+                                        cl.PlayerClient.SendChatMessage("Server", "This ship is now private. Goodbye.");
+
+                                        await cl.ServerClient.WarpTo(cl.Player);
+                                    }
+
+                                }
                             }
 
                         }
-                    }
-
-                }
-                else
-                {
-                    client.SendChatMessage("Server", "Syntax: /ship <public/private>");
-                }
-
-            }
-            else if (args.Length == 2)
-            {
-
-                var usr = SharpStarMain.Instance.Database.GetUser(args[1]);
-
-                if (usr == null)
-                {
-
-                    client.SendChatMessage("Server", "That user does not exist!");
-
-                    return;
-
-                }
-
-                EssentialCommandsShip ship = EssentialCommands.Database.GetShip(client.Server.Player.UserAccount.Id);
-
-                if (ship == null)
-                {
-                    ship = EssentialCommands.Database.AddShip(client.Server.Player.UserAccount.Id, false);
-                }
-
-                if (cmd.Equals("add", StringComparison.OrdinalIgnoreCase))
-                {
-
-                    EssentialCommands.Database.AddShipUser(usr.Id, ship.Id);
-
-                    client.SendChatMessage("Server", String.Format("The user {0} is now allowed on your ship!", args[1]));
-
-                }
-                else if (cmd.Equals("remove", StringComparison.OrdinalIgnoreCase))
-                {
-
-                    EssentialCommands.Database.RemoveShipUser(usr.Id, ship.Id);
-
-                    client.SendChatMessage("Server", String.Format("The user {0} is no longer allowed on your ship!", args[1]));
-
-                    foreach (var cl in SharpStarMain.Instance.Server.Clients.ToList())
-                    {
-                        if (!string.IsNullOrEmpty(cl.Player.PlayerShip) && cl.Player.PlayerShip.Equals(client.Server.Player.Name, StringComparison.OrdinalIgnoreCase))
+                        else
                         {
+                            client.SendChatMessage("Server", "Syntax: /ship <public/private>");
+                        }
 
-                            cl.PlayerClient.SendChatMessage("Server", "You are no longer allowed on this ship. Goodbye.");
+                    }
+                    else if (args.Length == 2)
+                    {
 
-                            cl.ServerClient.WarpTo(cl.Player);
+                        var usr = SharpStarMain.Instance.Database.GetUser(args[1]);
+
+                        if (usr == null)
+                        {
+                            client.SendChatMessage("Server", "That user does not exist!");
+
+                            return;
+                        }
+
+                        Ship ship = session.Query<Ship>().SingleOrDefault(p => p.OwnerUserAccountId == client.Server.Player.UserAccount.Id);
+
+                        if (ship == null)
+                        {
+                            ship = new Ship
+                            {
+                                OwnerUserAccountId = client.Server.Player.UserAccount.Id,
+                                Public = false
+                            };
+
+                            session.Save(ship);
+                        }
+
+                        if (cmd.Equals("add", StringComparison.OrdinalIgnoreCase))
+                        {
+                            session.Save(new ShipUser
+                            {
+                                HasAccess = true,
+                                Ship = ship,
+                                UserAccountId = usr.Id
+                            });
+
+                            client.SendChatMessage("Server", String.Format("The user {0} is now allowed on your ship!", args[1]));
 
                         }
+                        else if (cmd.Equals("remove", StringComparison.OrdinalIgnoreCase))
+                        {
+
+                            ShipUser shipUser = session.Query<ShipUser>().SingleOrDefault(p => p.UserAccountId == usr.Id && p.Ship.Id == ship.Id);
+
+                            session.Delete(shipUser);
+
+                            client.SendChatMessage("Server", String.Format("The user {0} is no longer allowed on your ship!", args[1]));
+
+                            foreach (var cl in SharpStarMain.Instance.Server.Clients)
+                            {
+                                if (!string.IsNullOrEmpty(cl.Player.PlayerShip) && cl.Player.PlayerShip.Equals(client.Server.Player.Name, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    cl.PlayerClient.SendChatMessage("Server", "You are no longer allowed on this ship. Goodbye.");
+
+                                    await cl.ServerClient.WarpTo(cl.Player);
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            client.SendChatMessage("Server", "Syntax: /ship <add/remove> <username>");
+                        }
+
+                    }
+                    else
+                    {
+                        client.SendChatMessage("Server", "Invalid syntax!");
                     }
 
-                }
-                else
-                {
-                    client.SendChatMessage("Server", "Syntax: /ship <add/remove> <username>");
-                }
+                    transaction.Commit();
 
+                }
             }
-            else
-            {
-                client.SendChatMessage("Server", "Invalid syntax!");
-            }
-
         }
 
         [PacketEvent(KnownPacket.WarpCommand)]
-        public void WarpCommandRecv(IPacket packet, SharpStarClient client)
+        public async Task WarpCommandRecv(IPacket packet, SharpStarClient client)
         {
 
             WarpCommandPacket wcp = (WarpCommandPacket)packet;
@@ -170,52 +196,47 @@ namespace EssentialCommandsPlugin.Commands
 
                 var players = SharpStarMain.Instance.Server.Clients.ToList().Where(p => p.Player != null && p.Player.Name.Equals(playerName, StringComparison.OrdinalIgnoreCase));
 
-                foreach (var plr in players)
+                using (var session = EssentialsDb.CreateSession())
                 {
-
-                    if (plr.Player.UserAccount == null)
-                        continue;
-
-                    var ship = EssentialCommands.Database.GetShip(plr.Player.UserAccount.Id);
-
-                    if (ship == null)
-                        continue;
-
-                    if (ship.Public)
-                        continue;
-
-                    if (client.Server.Player.UserAccount == null)
+                    foreach (var plr in players)
                     {
 
-                        client.SendChatMessage("Server", "This ship is private! Warp blocked.");
+                        if (plr.Player.UserAccount == null)
+                            continue;
 
-                        packet.Ignore = true;
+                        Ship ship = session.Query<Ship>().SingleOrDefault(p => p.OwnerUserAccountId == plr.Player.UserAccount.Id);
 
-                        break;
+                        if (ship == null)
+                            continue;
 
+                        if (ship.Public)
+                            continue;
+
+                        if (client.Server.Player.UserAccount == null)
+                        {
+                            client.SendChatMessage("Server", "This ship is private! Warp blocked.");
+
+                            packet.Ignore = true;
+
+                            break;
+                        }
+
+                        if (client.Server.Player.UserAccount.Id == ship.OwnerUserAccountId)
+                            continue;
+
+                        ShipUser shipUser = session.Query<ShipUser>().SingleOrDefault(p => p.UserAccountId == client.Server.Player.UserAccount.Id && p.Ship.Id == ship.Id);
+
+                        if ((shipUser == null || !shipUser.HasAccess) && !client.Server.Player.UserAccount.IsAdmin)
+                        {
+                            client.SendChatMessage("Server", "This ship is private! Warp blocked.");
+
+                            packet.Ignore = true;
+
+                            break;
+                        }
                     }
-
-                    if (client.Server.Player.UserAccount.Id == ship.OwnerUserAccountId)
-                        continue;
-
-                    var shipUser = EssentialCommands.Database.GetShipUser(client.Server.Player.UserAccount.Id, ship.Id);
-
-                    if ((shipUser == null || !shipUser.HasAccess) && !client.Server.Player.UserAccount.IsAdmin)
-                    {
-
-                        client.SendChatMessage("Server", "This ship is private! Warp blocked.");
-
-                        packet.Ignore = true;
-
-                        break;
-
-                    }
-
                 }
-
             }
-
         }
-
     }
 }

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using EssentialCommandsPlugin.DbModels;
+using NHibernate.Linq;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Packets;
@@ -13,7 +14,7 @@ namespace EssentialCommandsPlugin.Commands
     public class MuteCommand
     {
 
-        private List<EssentialCommandsMute> _mutedUsers;
+        private List<Mute> _mutedUsers;
 
         public MuteCommand()
         {
@@ -22,7 +23,10 @@ namespace EssentialCommandsPlugin.Commands
 
         private void RefreshMutedUsers()
         {
-            _mutedUsers = EssentialCommands.Database.GetMutedUsers();
+            using (var session = EssentialsDb.CreateSession())
+            {
+                _mutedUsers = session.CreateCriteria<Mute>().List<Mute>().ToList();
+            }
         }
 
         [Command("mute", "Mute a user")]
@@ -32,42 +36,34 @@ namespace EssentialCommandsPlugin.Commands
 
             if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("mute"))
             {
-
                 client.SendChatMessage("Server", "You do not have permission to use this command!");
 
                 return;
-
             }
 
             if (args.Length < 2)
             {
-
                 client.SendChatMessage("Server", "Syntax: /mute <username> <time>");
 
                 return;
-
             }
 
             var user = SharpStarMain.Instance.Database.GetUser(args[0]);
 
             if (user == null)
             {
-
                 client.SendChatMessage("Server", "There is no user by that name!");
 
                 return;
-
             }
 
             int time;
 
             if (!int.TryParse(args[1], out time))
             {
-
                 client.SendChatMessage("Server", "Invalid time!");
 
                 return;
-
             }
 
             DateTime? expireTime = null;
@@ -75,17 +71,31 @@ namespace EssentialCommandsPlugin.Commands
             if (time > 0)
                 expireTime = DateTime.Now.AddMinutes(time);
 
-            if (EssentialCommands.Database.AddMute(user.Id, expireTime))
+            using (var session = EssentialsDb.CreateSession())
             {
+                using (var transaction = session.BeginTransaction())
+                {
+                    if (!session.Query<Mute>().Any(p => p.UserId == user.Id))
+                    {
+                        Mute newMute = new Mute
+                        {
+                            UserId = user.Id,
+                            ExpireTime = expireTime
+                        };
 
-                client.SendChatMessage("Server", String.Format("User {0} has been muted!", user.Username));
+                        session.Save(newMute);
 
-                RefreshMutedUsers();
+                        client.SendChatMessage("Server", String.Format("User {0} has been muted!", user.Username));
 
-            }
-            else
-            {
-                client.SendChatMessage("Server", "This user has already been muted!");
+                        transaction.Commit();
+
+                        RefreshMutedUsers();
+                    }
+                    else
+                    {
+                        client.SendChatMessage("Server", "This user has already been muted!");
+                    }
+                }
             }
 
         }
@@ -97,35 +107,41 @@ namespace EssentialCommandsPlugin.Commands
 
             if (!EssentialCommands.IsAdmin(client) && !client.Server.Player.HasPermission("mute"))
             {
-
                 client.SendChatMessage("Server", "You do not have permission to use this command!");
 
                 return;
-
             }
 
             var user = SharpStarMain.Instance.Database.GetUser(args[0]);
 
             if (user == null)
             {
-
                 client.SendChatMessage("Server", "There is no user by that name!");
 
                 return;
-
             }
 
-            if (EssentialCommands.Database.RemoveMute(user.Id))
+            using (var session = EssentialsDb.CreateSession())
             {
+                using (var transaction = session.BeginTransaction())
+                {
+                    Mute mute = session.Query<Mute>().SingleOrDefault(p => p.UserId == user.Id);
 
-                client.SendChatMessage("Server", String.Format("The user {0} has been unmuted.", user.Username));
+                    if (mute != null)
+                    {
+                        client.SendChatMessage("Server", String.Format("The user {0} has been unmuted.", user.Username));
 
-                RefreshMutedUsers();
+                        session.Delete(mute);
 
-            }
-            else
-            {
-                client.SendChatMessage("Server", String.Format("The user {0} was not muted!", user.Username));
+                        transaction.Commit();
+
+                        RefreshMutedUsers();
+                    }
+                    else
+                    {
+                        client.SendChatMessage("Server", String.Format("The user {0} was not muted!", user.Username));
+                    }
+                }
             }
 
         }
@@ -133,36 +149,34 @@ namespace EssentialCommandsPlugin.Commands
         [PacketEvent(KnownPacket.ChatSent)]
         public void MonitorChatForMute(IPacket packet, SharpStarClient client)
         {
-
-            if (client.Server.Player.UserAccount != null)
+            if (client.Server != null && client.Server.Player != null && client.Server.Player.UserAccount != null)
             {
-
-                EssentialCommandsMute mute = _mutedUsers.SingleOrDefault(p => p.UserId == client.Server.Player.UserAccount.Id);
+                Mute mute = _mutedUsers.SingleOrDefault(p => p.UserId == client.Server.Player.UserAccount.Id);
 
                 if (mute != null)
                 {
-
                     if (mute.ExpireTime <= DateTime.Now)
                     {
+                        using (var session = EssentialsDb.CreateSession())
+                        {
+                            using (var transaction = session.BeginTransaction())
+                            {
+                                session.Delete(mute);
 
-                        EssentialCommands.Database.RemoveMute(client.Server.Player.UserAccount.Id);
+                                transaction.Commit();
+                            }
+                        }
 
                         RefreshMutedUsers();
-
                     }
                     else
                     {
-
                         packet.Ignore = true;
 
                         client.SendChatMessage("Server", "You have been muted!");
-
                     }
-
                 }
-
             }
-
         }
 
     }

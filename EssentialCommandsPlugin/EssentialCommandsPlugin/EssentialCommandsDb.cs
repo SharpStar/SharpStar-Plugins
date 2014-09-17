@@ -14,11 +14,9 @@ namespace EssentialCommandsPlugin
 
         public EssentialCommandsDb(string dbName)
         {
-
             DatabaseName = dbName;
 
             CreateTables();
-
         }
 
         public void CreateTables()
@@ -44,7 +42,6 @@ namespace EssentialCommandsPlugin
 
         public EssentialCommandsShipUser AddShipUser(int userId, int shipId, bool allowed = true)
         {
-
             var conn = new SQLiteConnection(DatabaseName);
 
             var ship = conn.Get<EssentialCommandsShip>(shipId);
@@ -72,7 +69,6 @@ namespace EssentialCommandsPlugin
             conn.Dispose();
 
             return usr;
-
         }
 
         public EssentialCommandsShipUser GetShipUser(int userId, int shipId)

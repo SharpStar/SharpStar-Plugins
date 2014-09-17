@@ -1,26 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using EssentialCommandsPlugin.Commands;
 using EssentialCommandsPlugin.ConsoleCommands;
+using EssentialCommandsPlugin.DbModels;
 using Mono.Addins;
-using SharpStar.Lib;
-using SharpStar.Lib.Attributes;
-using SharpStar.Lib.Database;
+using NHibernate.Linq;
 using SharpStar.Lib.Extensions;
 using SharpStar.Lib.Logging;
-using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
+using SQLite;
 
-[assembly: Addin("EssentialCommands", Version = "1.0.6.1")]
+[assembly: Addin("EssentialCommands", Version = "1.0.6.4")]
 [assembly: AddinDescription("A command plugin that is essential")]
-[assembly: AddinProperty("sharpstar", "0.2.3.9")]
+[assembly: AddinProperty("sharpstar", "0.2.4.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
-
+[assembly: ImportAddinAssembly("NHibernate.dll")]
+[assembly: ImportAddinAssembly("FluentMigrator.dll")]
+[assembly: ImportAddinAssembly("FluentMigrator.Runner.dll")]
+[assembly: ImportAddinAssembly("Iesi.Collections.dll")]
+[assembly: ImportAddinAssembly("FluentNHibernate.dll")]
 namespace EssentialCommandsPlugin
 {
     [Extension]
@@ -33,7 +36,7 @@ namespace EssentialCommandsPlugin
 
         private const string ConfigFileName = "essentialcommands.json";
 
-        public static readonly EssentialCommandsDb Database = new EssentialCommandsDb(DatabaseName);
+        //public static readonly EssentialCommandsDb Database = new EssentialCommandsDb(DatabaseName);
 
         public static readonly SharpStarLogger Logger = new SharpStarLogger("Essentials");
 
@@ -70,11 +73,17 @@ namespace EssentialCommandsPlugin
         }
 
 
+        static EssentialCommands()
+        {
+            Config = new EssentialCommandsConfig(ConfigFileName);
+        }
+
         public override void OnLoad()
         {
-
             Config = new EssentialCommandsConfig(ConfigFileName);
             Config.Save();
+
+            MigrateDb();
 
             RegisterCommandObject(_makeRemoveAdmin);
             RegisterCommandObject(_kickCommand);
@@ -103,7 +112,6 @@ namespace EssentialCommandsPlugin
             RegisterEventObject(_permCommands);
 
             _advertCommands.StartSendingAdverts();
-
         }
 
         public override void OnUnload()
@@ -120,30 +128,189 @@ namespace EssentialCommandsPlugin
 
         }
 
-        public override bool OnChatCommandReceived(SharpStarClient client, string command, string[] args)
+        private void MigrateDb()
         {
-
-            if (client.Server.Player.UserGroupId.HasValue && client.Server.Player.UserAccount != null)
+            if (File.Exists(DatabaseName))
             {
+                Logger.Info("Migrating Database...");
 
-                var cmd = Database.GetCommand(client.Server.Player.UserGroupId.Value, command);
-
-                if (cmd != null)
+                using (var session = EssentialsDb.CreateSession())
                 {
-
-                    Database.IncCommandTimesUsed(client.Server.Player.UserAccount.Id, cmd.GroupId, command);
-
-                    var usrCmd = Database.GetUserCommand(client.Server.Player.UserAccount.Id, cmd.GroupId, command);
-
-                    if (usrCmd != null)
+                    using (var transaction = session.BeginTransaction())
                     {
-                        if (cmd.Limit < usrCmd.TimesUsed)
+                        var conn = new SQLiteConnection(DatabaseName);
+
+                        foreach (var ban in conn.Table<EssentialCommandsBan>())
+                        {
+                            Ban newBan = new Ban
+                            {
+                                BanReason = ban.BanReason,
+                                ExpirationTime = ban.ExpirationTime,
+                                UserAccountId = ban.UserAccountId
+                            };
+
+                            int banId = ban.Id;
+                            foreach (var uuidBan in conn.Table<EssentialCommandsBanUUID>().Where(p => p.BanId == banId))
+                            {
+                                BanUUID banUuid = new BanUUID
+                                {
+                                    PlayerName = uuidBan.PlayerName,
+                                    UUID = uuidBan.UUID,
+                                    Ban = newBan
+                                };
+
+                                newBan.BanUUIDs.Add(banUuid);
+                            }
+
+                            session.Save(newBan);
+                        }
+
+                        foreach (var ship in conn.Table<EssentialCommandsShip>())
                         {
 
-                            client.SendChatMessage("Server", "You have reached the limit for this command!");
+                            Ship newShip = new Ship
+                            {
+                                OwnerUserAccountId = ship.OwnerUserAccountId,
+                                Public = ship.Public
+                            };
 
-                            return true;
+                            int shipId = ship.Id;
+                            foreach (var shipUser in conn.Table<EssentialCommandsShipUser>().Where(p => p.ShipId == shipId))
+                            {
+                                ShipUser newShipUser = new ShipUser
+                                {
+                                    Ship = newShip,
+                                    UserAccountId = shipUser.UserAccountId,
+                                    HasAccess = shipUser.HasAccess
+                                };
 
+                                newShip.ShipUsers.Add(newShipUser);
+                            }
+
+                            session.Save(newShip);
+                        }
+
+                        foreach (var mute in conn.Table<EssentialCommandsMute>())
+                        {
+                            Mute newMute = new Mute
+                            {
+                                ExpireTime = mute.ExpireTime,
+                                UserId = mute.UserId,
+                            };
+
+                            session.Save(newMute);
+                        }
+
+                        foreach (var planet in conn.Table<EssentialCommandsPlanet>())
+                        {
+                            ProtectedPlanet newPlanet = new ProtectedPlanet
+                            {
+                                OwnerId = planet.OwnerId,
+                                Planet = planet.Planet,
+                                Satellite = planet.Satellite,
+                                Sector = planet.Sector,
+                                X = planet.X,
+                                Y = planet.Y,
+                                Z = planet.Z
+                            };
+
+                            int planetId = planet.Id;
+                            foreach (var builder in conn.Table<EssentialCommandsBuilder>().Where(p => p.PlanetId == planetId))
+                            {
+                                Builder newBuilder = new Builder
+                                {
+                                    ProtectedPlanet = newPlanet,
+                                    UserId = builder.UserId,
+                                    Allowed = builder.Allowed
+                                };
+
+                                newPlanet.Builders.Add(newBuilder);
+                            }
+
+                            session.Save(newPlanet);
+                        }
+
+                        foreach (var group in conn.Table<EssentialCommandsGroup>())
+                        {
+                            Group newGroup = new Group
+                            {
+                                Prefix = group.Prefix,
+                                ProtectedPlanetLimit = group.ProtectedPlanetLimit,
+                                GroupId = group.Id
+                            };
+
+                            session.Save(newGroup);
+                        }
+
+                        foreach (var command in conn.Table<EssentialCommandsCommand>())
+                        {
+                            var newCommand = new Command
+                            {
+                                CommandName = command.Command,
+                                GroupId = command.GroupId,
+                                CommandLimit = command.Limit
+                            };
+
+                            int commandId = command.Id;
+                            foreach (var userCommand in conn.Table<EssentialCommandsUserCommand>().Where(p => p.CommandId == commandId))
+                            {
+                                UserCommand newUserCommand = new UserCommand
+                                {
+                                    Command = newCommand,
+                                    TimesUsed = userCommand.TimesUsed,
+                                    UserId = userCommand.UserId
+                                };
+
+                                session.Save(newUserCommand);
+                            }
+
+                            session.Save(newCommand);
+                        }
+
+                        transaction.Commit();
+
+                        Logger.Info("Migration Complete!");
+
+                        conn.Close();
+                        conn.Dispose();
+
+                        File.Move(DatabaseName, DatabaseName + ".old");
+                    }
+                }
+            }
+        }
+
+        public override Task<bool> OnChatCommandReceived(SharpStarClient client, string command, string[] args)
+        {
+
+            if (client.Server.Player != null && client.Server.Player.UserGroupId.HasValue && client.Server.Player.UserAccount != null)
+            {
+
+                using (var session = EssentialsDb.CreateSession())
+                {
+                    using (var transaction = session.BeginTransaction())
+                    {
+                        Command cmd = session.Query<Command>().SingleOrDefault(p => p.GroupId == client.Server.Player.UserGroupId.Value);
+
+                        if (cmd != null)
+                        {
+                            UserCommand uc = session.Query<UserCommand>().SingleOrDefault(p => p.UserId == client.Server.Player.UserAccount.Id);
+
+                            if (uc != null)
+                            {
+                                uc.TimesUsed++;
+
+                                if (cmd.CommandLimit < uc.TimesUsed)
+                                {
+                                    client.SendChatMessage("Server", "You have reached the limit for this command!");
+
+                                    return Task.FromResult(true);
+                                }
+                            }
+
+                            session.SaveOrUpdate(uc);
+
+                            transaction.Commit();
                         }
                     }
 
@@ -152,10 +319,9 @@ namespace EssentialCommandsPlugin
             }
 
             return base.OnChatCommandReceived(client, command, args);
-
         }
 
-        public static void KickBanPlayer(SharpStarServerClient kickBanner, List<SharpStarServerClient> players, bool ban = false, string banReason = "", DateTime? expireTime = null)
+        public static async Task KickBanPlayer(SharpStarServerClient kickBanner, List<SharpStarServerClient> players, bool ban = false, string banReason = "", DateTime? expireTime = null)
         {
 
             for (int i = 0; i < players.Count; i++)
@@ -171,7 +337,7 @@ namespace EssentialCommandsPlugin
                 else
                     plr.PlayerClient.SendChatMessage("Server", "You have been banned. Goodbye.");
 
-                Task.Factory.StartNew(() =>
+                await Task.Factory.StartNew(() =>
                 {
 
                     if (!ban)
@@ -192,7 +358,30 @@ namespace EssentialCommandsPlugin
                         if (plr.Player.UserAccount != null)
                             acctId = plr.Player.UserAccount.Id;
 
-                        Database.AddBan(plr.Player.UUID, plr.Player.Name, banReason, expireTime, acctId);
+                        using (var session = EssentialsDb.CreateSession())
+                        {
+                            using (var transaction = session.BeginTransaction())
+                            {
+                                Ban newBan = new Ban
+                                {
+                                    IPAddress = plr.PlayerClient.RemoteEndPoint.Address.ToString(),
+                                    UserAccountId = acctId,
+                                    BanReason = banReason,
+                                    ExpirationTime = expireTime
+                                };
+
+                                session.Save(newBan);
+
+                                session.Save(new BanUUID
+                                {
+                                    Ban = newBan,
+                                    PlayerName = plr.Player.Name,
+                                    UUID = plr.Player.UUID
+                                });
+
+                                transaction.Commit();
+                            }
+                        }
 
                         plr.ServerClient.ClientDisconnected += (sender, e) =>
                         {

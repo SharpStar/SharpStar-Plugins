@@ -12,11 +12,9 @@ namespace EssentialCommandsPlugin
 
         public EssentialCommandsConfig(string fileName)
         {
-
             FileName = fileName;
 
             Reload();
-
         }
 
         private void SetDefaults()
@@ -31,18 +29,15 @@ namespace EssentialCommandsPlugin
 
         public void Reload()
         {
-
             if (File.Exists(FileName))
             {
                 ConfigFile = JsonConvert.DeserializeObject<EssentialCommandsConfigFile>(File.ReadAllText(FileName));
             }
             else
             {
-
                 ConfigFile = new EssentialCommandsConfigFile();
 
                 SetDefaults();
-
             }
 
         }

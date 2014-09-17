@@ -3,9 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EssentialCommandsPlugin.Db;
+using EssentialCommandsPlugin.DbModels;
+using NHibernate.Linq;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Database;
+using SharpStar.Lib.DataTypes;
 using SharpStar.Lib.Entities;
 using SharpStar.Lib.Misc;
 using SharpStar.Lib.Packets;
@@ -17,11 +21,11 @@ namespace EssentialCommandsPlugin.Commands
     public class ProtectPlanetCommands
     {
 
-        private readonly Dictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>> _planets;
+        private readonly Dictionary<ProtectedPlanet, List<Builder>> _planets;
 
         public ProtectPlanetCommands()
         {
-            _planets = new Dictionary<EssentialCommandsPlanet, List<EssentialCommandsBuilder>>();
+            _planets = new Dictionary<ProtectedPlanet, List<Builder>>();
             RefreshProtectedPlanets();
         }
 
@@ -42,44 +46,67 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            EssentialCommandsPlanet planet = EssentialCommands.Database.GetProtectedPlanet(client.Server.Player.Coordinates);
-
-            if (planet != null)
+            using (var session = EssentialsDb.CreateSession())
             {
-
-                client.SendChatMessage("Server", "Planet is already protected!");
-
-                return;
-
-            }
-
-            if (client.Server.Player.UserAccount.GroupId.HasValue)
-            {
-
-                EssentialCommandsGroup group = EssentialCommands.Database.GetGroup(client.Server.Player.UserAccount.GroupId.Value);
-
-                if (group == null)
-                    group = EssentialCommands.Database.AddGroup(client.Server.Player.UserAccount.GroupId.Value, null);
-
-                var planets = EssentialCommands.Database.GetUserPlanets(client.Server.Player.UserAccount.Id);
-
-                if (planets.Count >= group.ProtectedPlanetLimit)
+                using (var transaction = session.BeginTransaction())
                 {
+                    ProtectedPlanet planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
 
-                    client.SendChatMessage("Server", "You have reached the limit of planets you can protect!");
+                    if (planet != null)
+                    {
+                        client.SendChatMessage("Server", "Planet is already protected!");
 
-                    return;
+                        return;
+                    }
+
+                    if (client.Server.Player.UserAccount.GroupId.HasValue)
+                    {
+                        Group group = session.Query<Group>().SingleOrDefault(p => p.GroupId == client.Server.Player.UserAccount.GroupId.Value);
+
+                        if (group == null)
+                        {
+                            group = new Group
+                            {
+                                GroupId = client.Server.Player.UserAccount.GroupId.Value
+                            };
+
+                            session.Save(group);
+                        }
+
+                        var planets = session.Query<ProtectedPlanet>().Where(p => p.OwnerId == client.Server.Player.UserAccount.Id);
+
+                        if (planets.Count() >= group.ProtectedPlanetLimit)
+                        {
+                            client.SendChatMessage("Server", "You have reached the limit of planets you can protect!");
+
+                            return;
+                        }
+
+                    }
+
+                    WorldCoordinate coords = client.Server.Player.Coordinates;
+                    planet = new ProtectedPlanet
+                    {
+                        OwnerId = client.Server.Player.UserAccount.Id,
+                        Planet = coords.Planet,
+                        Satellite = coords.Satellite,
+                        Sector = coords.Sector,
+                        X = coords.X,
+                        Y = coords.Y,
+                        Z = coords.Z
+                    };
+
+                    session.Save(planet);
+
+                    transaction.Commit();
+
+                    client.SendChatMessage("Server", "Planet now protected!");
+
+                    if (_planets.All(p => p.Key.ID != planet.ID))
+                        _planets.Add(planet, new List<Builder>());
 
                 }
-
             }
-
-            planet = EssentialCommands.Database.AddProtectedPlanet(client.Server.Player.Coordinates, client.Server.Player.UserAccount.Id);
-
-            client.SendChatMessage("Server", "Planet now protected!");
-
-            if (planet != null && !_planets.ContainsKey(planet))
-                _planets.Add(planet, new List<EssentialCommandsBuilder>());
 
         }
 
@@ -100,31 +127,39 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            var planet = EssentialCommands.Database.GetProtectedPlanet(client.Server.Player.Coordinates);
-
-            if (planet == null)
+            using (var session = EssentialsDb.CreateSession())
             {
+                using (var transaction = session.BeginTransaction())
+                {
+                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
 
-                client.SendChatMessage("Server", "Planet is not protected!");
+                    if (planet == null)
+                    {
 
-                return;
+                        client.SendChatMessage("Server", "Planet is not protected!");
 
+                        return;
+
+                    }
+
+                    if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
+                    {
+
+                        client.SendChatMessage("Server", "You do not own this planet!");
+
+                        return;
+
+                    }
+
+                    _planets.Remove(planet);
+
+                    session.Delete(planet);
+
+                    client.SendChatMessage("Server", "Planet is no longer protected!");
+
+                    transaction.Commit();
+                }
             }
-
-            if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
-            {
-
-                client.SendChatMessage("Server", "You do not own this planet!");
-
-                return;
-
-            }
-
-            _planets.Remove(planet);
-
-            EssentialCommands.Database.RemoveProtectedPlanet(client.Server.Player.Coordinates);
-
-            client.SendChatMessage("Server", "Planet is no longer protected!");
 
         }
 
@@ -132,7 +167,6 @@ namespace EssentialCommandsPlugin.Commands
         [CommandPermission("planetprotect")]
         public void AddBuilder(SharpStarClient client, string[] args)
         {
-
             if (args.Length != 1)
             {
                 client.SendChatMessage("Server", "Syntax: /addbuilder <username>");
@@ -159,40 +193,50 @@ namespace EssentialCommandsPlugin.Commands
                 return;
             }
 
-            var planet = EssentialCommands.Database.GetProtectedPlanet(client.Server.Player.Coordinates);
-
-            if (planet == null)
+            using (var session = EssentialsDb.CreateSession())
             {
-                client.SendChatMessage("Server", "Planet is not protected!");
+                using (var transaction = session.BeginTransaction())
+                {
+                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
 
-                return;
-            }
+                    if (planet == null)
+                    {
+                        client.SendChatMessage("Server", "Planet is not protected!");
 
-            if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
-            {
-                client.SendChatMessage("Server", "You do not own this planet!");
+                        return;
+                    }
 
-                return;
-            }
+                    if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
+                    {
+                        client.SendChatMessage("Server", "You do not own this planet!");
 
-            EssentialCommandsBuilder builder = EssentialCommands.Database.GetPlanetBuilder(user.Id, planet.Id);
+                        return;
+                    }
 
-            if (builder != null)
-            {
-                client.SendChatMessage("Server", "User is already a builder on this planet!");
+                    Builder builder = session.Query<Builder>().SingleOrDefault(p => p.UserId == user.Id && p.ProtectedPlanet.ID == planet.ID);
+                    if (builder != null)
+                    {
+                        client.SendChatMessage("Server", "User is already a builder on this planet!");
 
-                return;
-            }
+                        return;
+                    }
 
-            builder = EssentialCommands.Database.AddPlanetBuilder(planet, user.Id, planet.Id);
+                    builder = new Builder
+                    {
+                        ProtectedPlanet = planet,
+                        UserId = user.Id,
+                        Allowed = true
+                    };
 
-            client.SendChatMessage("Server", String.Format("User {0} can now build on this planet", user.Username));
+                    session.Save(builder);
 
-            if (builder != null)
-            {
-                var x = _planets.First(p => p.Key == planet);
+                    client.SendChatMessage("Server", String.Format("User {0} can now build on this planet", user.Username));
 
-                x.Value.Add(builder);
+                    var x = _planets.First(p => p.Key.Equals(planet));
+                    x.Value.Add(builder);
+
+                    transaction.Commit();
+                }
             }
 
         }
@@ -231,43 +275,51 @@ namespace EssentialCommandsPlugin.Commands
                 return;
             }
 
-            var planet = EssentialCommands.Database.GetProtectedPlanet(client.Server.Player.Coordinates);
-
-            if (planet == null)
+            using (var session = EssentialsDb.CreateSession())
             {
-                client.SendChatMessage("Server", "Planet is not protected!");
+                using (var transaction = session.BeginTransaction())
+                {
+                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
 
-                return;
+                    if (planet == null)
+                    {
+                        client.SendChatMessage("Server", "Planet is not protected!");
+
+                        return;
+                    }
+
+                    if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
+                    {
+                        client.SendChatMessage("Server", "You do not own this planet!");
+
+                        return;
+                    }
+
+                    Builder builder = session.Query<Builder>().SingleOrDefault(p => p.UserId == user.Id && p.ProtectedPlanet.ID == planet.ID);
+
+                    if (builder == null)
+                    {
+                        client.SendChatMessage("Server", "The user is not a builder");
+
+                        return;
+                    }
+
+                    session.Delete(builder);
+
+                    client.SendChatMessage("Server", String.Format("User {0} can no longer build on this planet", user.Username));
+
+                    var x = _planets.First(p => p.Key.Equals(planet));
+
+                    x.Value.RemoveAll(p => p.UserId == builder.UserId);
+
+                    transaction.Commit();
+                }
             }
-
-            if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
-            {
-                client.SendChatMessage("Server", "You do not own this planet!");
-
-                return;
-            }
-
-            EssentialCommandsBuilder builder = EssentialCommands.Database.GetPlanetBuilder(user.Id, planet.Id);
-
-            if (builder == null)
-            {
-                client.SendChatMessage("Server", "The user is not a builder");
-
-                return;
-            }
-
-            EssentialCommands.Database.RemovePlanetBuilder(planet, user.Id, planet.Id);
-
-            client.SendChatMessage("Server", String.Format("User {0} can no longer build on this planet", user.Username));
-
-            var x = _planets.First(p => p.Key == planet);
-
-            x.Value.RemoveAll(p => p.UserId == builder.UserId);
         }
 
         [PacketEvent(KnownPacket.ModifyTileList, KnownPacket.DamageTileGroup, KnownPacket.DamageTile, KnownPacket.ConnectWire, KnownPacket.DisconnectAllWires,
             KnownPacket.EntityCreate, KnownPacket.SpawnEntity, KnownPacket.TileLiquidUpdate)]
-        public async void OnTryBuild(IPacket packet, SharpStarClient client)
+        public async Task OnTryBuild(IPacket packet, SharpStarClient client)
         {
 
             if (_planets == null || _planets.Count == 0)
@@ -289,7 +341,7 @@ namespace EssentialCommandsPlugin.Commands
                     if (planets.Value == null)
                         return;
 
-                    EssentialCommandsBuilder builder = planets.Value.SingleOrDefault(w => w.UserId == client.Server.Player.UserAccount.Id && w.Allowed);
+                    Builder builder = planets.Value.SingleOrDefault(w => w.UserId == client.Server.Player.UserAccount.Id && w.Allowed);
 
                     if (builder == null && planets.Key.OwnerId != client.Server.Player.UserAccount.Id)
                     {
@@ -338,7 +390,6 @@ namespace EssentialCommandsPlugin.Commands
 
                                 }
                             }
-
                         }
                         else if (p == KnownPacket.SpawnEntity)
                         {
@@ -477,14 +528,17 @@ namespace EssentialCommandsPlugin.Commands
         {
             _planets.Clear();
 
-            var planets = EssentialCommands.Database.GetPlanets();
-
-            foreach (var planet in planets)
+            using (var session = EssentialsDb.CreateSession())
             {
-                var builders = EssentialCommands.Database.GetPlanetBuilders(planet.Id);
+                var planets = session.CreateCriteria<ProtectedPlanet>().List<ProtectedPlanet>();
 
-                _planets.Add(planet, builders);
+                foreach (var planet in planets)
+                {
+                    var builders = planet.Builders.ToList();
 
+                    _planets.Add(planet, builders);
+
+                }
             }
         }
 

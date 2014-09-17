@@ -32,12 +32,10 @@ namespace EssentialCommandsPlugin.Commands
         [AfterPacketEvent(KnownPacket.ConnectionResponse)]
         public void AfterConnectionResponse(IPacket packet, SharpStarClient client)
         {
-
             if (!string.IsNullOrEmpty(EssentialCommands.Config.ConfigFile.Motd)) //if motd has been set
             {
                 client.SendChatMessage("MOTD", EssentialCommands.Config.ConfigFile.Motd);
             }
-
         }
 
     }

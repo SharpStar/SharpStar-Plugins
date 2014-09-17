@@ -19,7 +19,7 @@ using SharpStar.Lib.Mono;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9.8")]
+[assembly: Addin("ServerManagement", Version = "1.0.9.9")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -75,6 +75,9 @@ namespace ServerManagementPlugin
             if (initProc != null)
             {
                 pid = initProc.Id;
+
+                Config.ConfigFile.ServerExecutable = FindProcessFileName(pid);
+                Config.Save();
             }
 
             if (Config.ConfigFile.ServerCheckInterval > 0)
@@ -352,6 +355,8 @@ namespace ServerManagementPlugin
                     newServerProc.Start();
 
                     newServerProc.Close();
+
+                    pid = newServerProc.Id;
                 }
             }
             else
@@ -424,12 +429,15 @@ namespace ServerManagementPlugin
                             newServerProc.Start();
 
                             newServerProc.Close();
+
+
+                            Logger.Info("New server instance started, shutting down the old one now!");
+
+                            StopServer(serverProc);
+
+                            pid = newServerProc.Id;
+
                         }
-
-                        Logger.Info("New server instance started, shutting down the old one now!");
-
-                        StopServer(serverProc);
-
                     }
                     else
                     {
@@ -494,6 +502,8 @@ namespace ServerManagementPlugin
                 shutdownRequested = true;
             }
 
+            Logger.Info("Server shutting down...");
+
             if (MonoHelper.IsRunningOnMono())
             {
                 using (Process killServerProc = new Process())
@@ -509,10 +519,16 @@ namespace ServerManagementPlugin
                     killServerProc.StartInfo = killPsi;
                     killServerProc.Start();
 
-                    killServerProc.WaitForExit();
+                    if (!killServerProc.WaitForExit((int)TimeSpan.FromSeconds(5).TotalMilliseconds))
+                    {
+                        killServerProc.Kill();
+                        serverProc.Kill();
+                    }
+
                     killServerProc.Close();
                     killServerProc.Dispose();
 
+                    Logger.Info("Server shutdown completed!");
                 }
             }
             else
@@ -521,7 +537,7 @@ namespace ServerManagementPlugin
 
                 Timer checkProcTimer = new Timer();
                 checkProcTimer.AutoReset = false;
-                checkProcTimer.Interval = TimeSpan.FromSeconds(5).TotalMilliseconds;
+                checkProcTimer.Interval = TimeSpan.FromSeconds(10).TotalMilliseconds;
 
                 checkProcTimer.Elapsed += (s, e) =>
                 {
@@ -531,6 +547,10 @@ namespace ServerManagementPlugin
 
                         serverProc.Kill();
                         serverProc.Close();
+                    }
+                    else
+                    {
+                        Logger.Info("Server shutdown completed!");
                     }
                 };
 

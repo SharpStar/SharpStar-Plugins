@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using EssentialCommandsPlugin.Db;
+using EssentialCommandsPlugin.DbModels;
+using NHibernate.Linq;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Database;
@@ -14,11 +18,11 @@ namespace EssentialCommandsPlugin.Commands
     public class PermissionCommands
     {
 
-        public static readonly List<EssentialCommandsGroup> Groups;
+        public static List<Group> Groups;
 
         static PermissionCommands()
         {
-            Groups = new List<EssentialCommandsGroup>();
+            Groups = new List<Group>();
         }
 
         public PermissionCommands()
@@ -28,8 +32,10 @@ namespace EssentialCommandsPlugin.Commands
 
         public void RefreshGroups()
         {
-            Groups.Clear();
-            Groups.AddRange(EssentialCommands.Database.GetGroups());
+            using (var session = EssentialsDb.CreateSession())
+            {
+                Groups = session.CreateCriteria<Group>().List<Group>().ToList();
+            }
         }
 
         [PacketEvent(KnownPacket.ChatReceived)]
@@ -42,12 +48,11 @@ namespace EssentialCommandsPlugin.Commands
 
             if (plr != null && plr.Player.UserGroupId.HasValue)
             {
-                EssentialCommandsGroup group = Groups.SingleOrDefault(p => p.GroupId == plr.Player.UserGroupId);
+                Group group = Groups.SingleOrDefault(p => p.GroupId == plr.Player.UserGroupId);
 
                 if (group != null && !string.IsNullOrEmpty(group.Prefix))
                     csp.Name = String.Format("[{0}] {1}", group.Prefix, csp.Name);
             }
-
         }
 
         [PacketEvent(KnownPacket.ConnectionResponse)]
@@ -59,7 +64,7 @@ namespace EssentialCommandsPlugin.Commands
 
             ConnectionResponsePacket crp = (ConnectionResponsePacket)packet;
 
-            foreach (EssentialCommandsGroup group in Groups.ToList())
+            foreach (Group group in Groups.ToList())
             {
                 if (!string.IsNullOrEmpty(group.Prefix) && client.Server.Player.Name.IndexOf(group.Prefix, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
@@ -204,15 +209,31 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            EssentialCommandsGroup grp = EssentialCommands.Database.GetGroup(group.Id);
+            using (var session = EssentialsDb.CreateSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
 
-            if (grp == null)
-            {
-                EssentialCommands.Database.AddGroup(group.Id, args[1]);
-            }
-            else
-            {
-                EssentialCommands.Database.SetGroupPrefix(group.Id, args[1]);
+                    if (grp == null)
+                    {
+                        Group newGroup = new Group
+                        {
+                            Prefix = args[1]
+                        };
+
+                        session.Save(newGroup);
+
+                    }
+                    else
+                    {
+                        grp.Prefix = args[1];
+
+                        session.SaveOrUpdate(grp);
+                    }
+
+                    transaction.Commit();
+                }
             }
 
             RefreshGroups();
@@ -295,7 +316,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setgroupcmdlimit")]
         [CommandPermission("permissions")]
-        public void SetGroupCommandLimit(SharpStarClient client, string[] args)
+        public async Task SetGroupCommandLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setgroupcmdlimit"))
@@ -303,40 +324,62 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length < 3)
             {
-
                 client.SendChatMessage("Server", "Syntax: /setgroupcmdlimit <group name> <command name> <limit>");
 
                 return;
-
             }
 
             SharpStarGroup group = SharpStarMain.Instance.Database.GetGroup(args[0]);
 
             if (group == null)
             {
-
                 client.SendChatMessage("Server", "Group does not exist!");
 
                 return;
-
             }
 
             int limit;
 
             if (!int.TryParse(args[2], out limit))
             {
-
                 client.SendChatMessage("Server", "Invalid limit!");
 
                 return;
-
             }
 
-            EssentialCommandsCommand cmd = EssentialCommands.Database.AddCommand(group.Id, args[1], limit);
-
-            if (cmd != null)
+            using (var session = EssentialsDb.CreateSession())
             {
-                EssentialCommands.Database.SetCommandLimit(group.Id, args[1], limit);
+                using (var transaction = session.BeginTransaction())
+                {
+                    Group newGroup = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+
+                    if (newGroup != null)
+                    {
+                        Command cmd = newGroup.Commands.SingleOrDefault(p => p.CommandName.Equals(args[1], StringComparison.OrdinalIgnoreCase));
+
+                        if (cmd == null)
+                        {
+                            Command newCmd = new Command
+                            {
+                                CommandName = args[1],
+                                CommandLimit = limit,
+                                GroupId = group.Id,
+                                Group = newGroup
+                            };
+
+                            session.Save(newCmd);
+                        }
+                        else
+                        {
+                            cmd.CommandLimit = limit;
+
+                            session.SaveOrUpdate(cmd);
+                        }
+                    }
+
+                    transaction.Commit();
+
+                }
             }
 
             client.SendChatMessage("Server", "Limit set!");
@@ -345,7 +388,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("delgroupcmdlimit")]
         [CommandPermission("permissions")]
-        public void RemoveGroupCommandLimit(SharpStarClient client, string[] args)
+        public async Task RemoveGroupCommandLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "delgroupcmdlimit"))
@@ -371,13 +414,32 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            if (EssentialCommands.Database.SetCommandLimit(group.Id, args[1], null))
+            using (var session = EssentialsDb.CreateSession())
             {
-                client.SendChatMessage("Server", "Limit removed!");
-            }
-            else
-            {
-                client.SendChatMessage("Server", "There was no limit associated with this command");
+                using (var transaction = session.BeginTransaction())
+                {
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+
+                    if (grp != null)
+                    {
+                        Command cmd = grp.Commands.SingleOrDefault(p => p.CommandName.Equals(args[1], StringComparison.OrdinalIgnoreCase));
+
+                        if (cmd != null)
+                        {
+                            client.SendChatMessage("Server", "Limit removed!");
+
+                            cmd.CommandLimit = null;
+
+                            session.SaveOrUpdate(cmd);
+
+                            transaction.Commit();
+                        }
+                        else
+                        {
+                            client.SendChatMessage("Server", "There was no limit associated with this command");
+                        }
+                    }
+                }
             }
 
         }
@@ -414,7 +476,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setplanetlimit")]
         [CommandPermission("permissions")]
-        public void SetPlanetLimit(SharpStarClient client, string[] args)
+        public async Task SetPlanetLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
@@ -451,7 +513,22 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            EssentialCommands.Database.SetGroupPlanetLimit(group.Id, limit);
+            using (var session = EssentialsDb.CreateSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+
+                    if (grp != null)
+                    {
+                        grp.ProtectedPlanetLimit = limit;
+
+                        session.SaveOrUpdate(grp);
+
+                        transaction.Commit();
+                    }
+                }
+            }
 
             client.SendChatMessage("Server", "Limit has been set!");
 
@@ -459,7 +536,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("delplanetlimit")]
         [CommandPermission("permissions")]
-        public void RemovePlanetLimit(SharpStarClient client, string[] args)
+        public async Task RemovePlanetLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
@@ -485,7 +562,22 @@ namespace EssentialCommandsPlugin.Commands
 
             }
 
-            EssentialCommands.Database.SetGroupPlanetLimit(group.Id, null);
+            using (var session = EssentialsDb.CreateSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+
+                    if (grp != null)
+                    {
+                        grp.ProtectedPlanetLimit = null;
+
+                        session.SaveOrUpdate(grp);
+                    }
+
+                    transaction.Commit();
+                }
+            }
 
             client.SendChatMessage("Server", "Limit has been removed!");
 
@@ -523,7 +615,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setusergroup", "Set a user's group")]
         [CommandPermission("permissions")]
-        public void SetUserGroup(SharpStarClient client, string[] args)
+        public async Task SetUserGroup(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setusergroup"))
@@ -561,10 +653,26 @@ namespace EssentialCommandsPlugin.Commands
             }
 
             SharpStarMain.Instance.Database.ChangeUserGroup(user.Id, group.Id);
-            EssentialCommands.Database.RemoveUserCommmands(user.Id);
+
+            using (var session = EssentialsDb.CreateSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    var userCommands = session.Query<UserCommand>().Where(p => p.UserId == user.Id);
+
+                    if (userCommands.Any())
+                    {
+                        foreach (UserCommand uc in userCommands)
+                        {
+                            session.Delete(uc);
+                        }
+
+                        transaction.Commit();
+                    }
+                }
+            }
 
             client.SendChatMessage("Server", "User group changed!");
-
         }
 
     }

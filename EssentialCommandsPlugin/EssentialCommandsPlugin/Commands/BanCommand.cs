@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using EssentialCommandsPlugin.DbModels;
+using NHibernate.Linq;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Packets;
@@ -14,7 +17,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("ban", "Ban a user")]
         [CommandPermission("ban")]
-        public void BanPlayer(SharpStarClient client, string[] args)
+        public async Task BanPlayer(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "ban"))
@@ -88,13 +91,12 @@ namespace EssentialCommandsPlugin.Commands
                 return;
             }
 
-            EssentialCommands.KickBanPlayer(client.Server, players, true, banReason, timeType.ToDateTime(timeInt));
-
+            await EssentialCommands.KickBanPlayer(client.Server, players, true, banReason, timeType.ToDateTime(timeInt));
         }
 
         [Command("permban", "Permanently ban a player")]
         [CommandPermission("permban")]
-        public void PermBanPlayer(SharpStarClient client, string[] args)
+        public async Task PermBanPlayer(SharpStarClient client, string[] args)
         {
             if (!EssentialCommands.CanUserAccess(client, "permban"))
                 return;
@@ -138,7 +140,7 @@ namespace EssentialCommandsPlugin.Commands
                 return;
             }
 
-            EssentialCommands.KickBanPlayer(client.Server, players, true, banReason);
+            await EssentialCommands.KickBanPlayer(client.Server, players, true, banReason);
 
         }
 
@@ -146,17 +148,14 @@ namespace EssentialCommandsPlugin.Commands
         [CommandPermission("ban")]
         public void UnbanPlayer(SharpStarClient client, string[] args)
         {
-
             if (!EssentialCommands.CanUserAccess(client, "unban"))
                 return;
 
             if (args.Length == 0)
             {
-
                 client.SendChatMessage("Server", "Syntax: /unban <player name>");
 
                 return;
-
             }
 
             string username = args[0];
@@ -170,9 +169,90 @@ namespace EssentialCommandsPlugin.Commands
                 return;
             }
 
-            EssentialCommands.Database.RemoveBanByUserId(usr.Id);
+            using (var session = EssentialsDb.CreateSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    var ban = session.Query<Ban>().SingleOrDefault(p => p.UserAccountId == usr.Id);
+
+                    if (ban != null)
+                    {
+                        session.Delete(ban);
+
+                        transaction.Commit();
+                    }
+                }
+            }
 
             client.SendChatMessage("Server", "The user is no longer banned!");
+        }
+
+        [CommandPermission("ban")]
+        [Command("banip", "Bans an IP Address from joining the server")]
+        public void BanIp(SharpStarClient client, string[] args)
+        {
+            if (args.Length == 0)
+            {
+                client.SendChatMessage("Server", "Syntax: /banip <ip address>");
+            }
+
+            string ip = args[0];
+
+            using (var session = EssentialsDb.CreateSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    if (session.Query<BanIP>().Any(p => p.IPAddress == ip))
+                    {
+                        client.SendChatMessage("Server", "That ip has already been banned!");
+                    }
+                    else
+                    {
+                        session.Save(new BanIP
+                        {
+                            IPAddress = ip
+                        });
+
+                        transaction.Commit();
+
+                        client.SendChatMessage("Server", "IP Ban Added!");
+                    }
+                }
+            }
+
+        }
+
+        [CommandPermission("ban")]
+        [Command("unbanip", "Unbans an IP Address")]
+        public void UnbanIp(SharpStarClient client, string[] args)
+        {
+            if (args.Length == 0)
+            {
+                client.SendChatMessage("Server", "Syntax: /unbanip <ip address>");
+            }
+
+            string ip = args[0];
+
+            using (var session = EssentialsDb.CreateSession())
+            {
+                using (var transaction = session.BeginTransaction())
+                {
+                    BanIP banIp = session.Query<BanIP>().SingleOrDefault(p => p.IPAddress == ip);
+
+                    if (banIp == null)
+                    {
+                        client.SendChatMessage("Server", "That ip has not been banned!");
+                    }
+                    else
+                    {
+                        session.Delete(banIp);
+
+                        transaction.Commit();
+
+                        client.SendChatMessage("Server", "IP Ban Removed!");
+                    }
+                }
+            }
 
         }
 
@@ -180,111 +260,125 @@ namespace EssentialCommandsPlugin.Commands
         public void ConnectionResponse(IPacket packet, SharpStarClient client)
         {
 
-            if (client.Server.Player == null)
+            if (client.Server == null || client.Server.Player == null)
                 return;
 
             ConnectionResponsePacket crp = (ConnectionResponsePacket)packet;
 
-            EssentialCommandsBanUUID uuidBan = EssentialCommands.Database.GetBansUuid(client.Server.Player.UUID);
-
-            string banReason = "You have been banned!";
-            string tempTemplate = EssentialCommands.Config.ConfigFile.TempBanTemplate;
-            string permTemplate = EssentialCommands.Config.ConfigFile.PermBanTemplate;
-
-            if (uuidBan != null)
+            using (var session = EssentialsDb.CreateSession())
             {
-                EssentialCommandsBan ban = EssentialCommands.Database.GetBan(uuidBan.BanId);
-
-                if (ban != null)
+                using (var transaction = session.BeginTransaction())
                 {
-                    if (ban.ExpirationTime.HasValue && DateTime.Now > ban.ExpirationTime.Value)
-                    {
-                        EssentialCommands.Database.RemoveBan(ban.Id);
-                    }
-                    else
-                    {
-                        if (!string.IsNullOrEmpty(ban.BanReason))
-                        {
-                            banReason = ban.BanReason;
-                        }
+                    BanUUID uuidBan = session.Query<BanUUID>().SingleOrDefault(p => p.UUID == client.Server.Player.UUID ||
+                        p.Ban.IPAddress == client.Server.PlayerClient.RemoteEndPoint.Address.ToString());
 
-                        if (!string.IsNullOrEmpty(tempTemplate) && !string.IsNullOrEmpty(permTemplate))
-                        {
-                            string tmp = banReason;
+                    string banReason = "You have been banned!";
+                    string tempTemplate = EssentialCommands.Config.ConfigFile.TempBanTemplate;
+                    string permTemplate = EssentialCommands.Config.ConfigFile.PermBanTemplate;
 
-                            if (ban.ExpirationTime.HasValue)
-                                banReason = tempTemplate;
+                    if (uuidBan != null)
+                    {
+                        Ban ban = uuidBan.Ban;
+
+                        if (ban != null)
+                        {
+                            if (ban.ExpirationTime.HasValue && DateTime.Now > ban.ExpirationTime.Value)
+                            {
+                                session.Delete(ban);
+
+                                transaction.Commit();
+                            }
                             else
-                                banReason = permTemplate;
+                            {
+                                if (!string.IsNullOrEmpty(ban.BanReason))
+                                {
+                                    banReason = ban.BanReason;
+                                }
 
-                            banReason = banReason.Replace("<reason>", tmp);
+                                if (!string.IsNullOrEmpty(tempTemplate) && !string.IsNullOrEmpty(permTemplate))
+                                {
+                                    string tmp = banReason;
 
-                            if (ban.ExpirationTime.HasValue)
-                                banReason = banReason.Replace("<time>", HumanizeTimeSpan(ban.ExpirationTime.Value - DateTime.Now));
+                                    if (ban.ExpirationTime.HasValue)
+                                        banReason = tempTemplate;
+                                    else
+                                        banReason = permTemplate;
 
-                            if (client.Server.Player.UserAccount != null)
-                                banReason = banReason.Replace("<account>", client.Server.Player.UserAccount.Username);
+                                    banReason = banReason.Replace("<reason>", tmp);
 
-                            if (!string.IsNullOrEmpty(uuidBan.PlayerName))
-                                banReason = banReason.Replace("<player>", uuidBan.PlayerName);
+                                    if (ban.ExpirationTime.HasValue)
+                                        banReason = banReason.Replace("<time>", HumanizeTimeSpan(ban.ExpirationTime.Value - DateTime.Now));
 
+                                    if (client.Server.Player.UserAccount != null)
+                                        banReason = banReason.Replace("<account>", client.Server.Player.UserAccount.Username);
+
+                                    if (!string.IsNullOrEmpty(uuidBan.PlayerName))
+                                        banReason = banReason.Replace("<player>", uuidBan.PlayerName);
+
+                                }
+
+                                crp.Success = false;
+                                crp.RejectionReason = banReason;
+
+                                EssentialCommands.Logger.Info("Banned player {0} tried to join!", client.Server.Player.Name);
+                            }
                         }
-
-                        crp.Success = false;
-                        crp.RejectionReason = banReason;
-
-                        EssentialCommands.Logger.Info("Banned player {0} tried to join!", client.Server.Player.Name);
-                    }
-                }
-                else
-                {
-                    EssentialCommands.Database.RemoveBanUuid(uuidBan.UUID);
-                }
-            }
-            else if (client.Server.Player.UserAccount != null)
-            {
-                EssentialCommandsBan ban = EssentialCommands.Database.GetBanByUserId(client.Server.Player.UserAccount.Id);
-
-                if (ban != null)
-                {
-
-                    if (ban.ExpirationTime.HasValue && DateTime.Now > ban.ExpirationTime.Value)
-                    {
-                        EssentialCommands.Database.RemoveBan(ban.Id);
-                    }
-                    else
-                    {
-                        if (!string.IsNullOrEmpty(ban.BanReason))
+                        else
                         {
-                            banReason = ban.BanReason;
+                            session.Delete(uuidBan);
+
+                            transaction.Commit();
                         }
+                    }
+                    else if (client.Server.Player.UserAccount != null)
+                    {
+                        Ban ban = session.Query<Ban>().SingleOrDefault(p => p.UserAccountId != null && (p.UserAccountId == client.Server.Player.UserAccount.Id ||
+                           p.IPAddress == client.Server.PlayerClient.RemoteEndPoint.Address.ToString()));
 
-                        if (!string.IsNullOrEmpty(tempTemplate) && !string.IsNullOrEmpty(permTemplate))
+                        if (ban != null)
                         {
-                            string tmp = banReason;
 
-                            if (ban.ExpirationTime.HasValue)
-                                banReason = tempTemplate;
+                            if (ban.ExpirationTime.HasValue && DateTime.Now > ban.ExpirationTime.Value)
+                            {
+                                session.Delete(ban);
+
+                                transaction.Commit();
+                            }
                             else
-                                banReason = permTemplate;
+                            {
+                                if (!string.IsNullOrEmpty(ban.BanReason))
+                                {
+                                    banReason = ban.BanReason;
+                                }
 
-                            banReason = banReason.Replace("<reason>", tmp);
+                                if (!string.IsNullOrEmpty(tempTemplate) && !string.IsNullOrEmpty(permTemplate))
+                                {
+                                    string tmp = banReason;
 
-                            if (ban.ExpirationTime.HasValue)
-                                banReason = banReason.Replace("<time>", HumanizeTimeSpan(ban.ExpirationTime.Value - DateTime.Now));
+                                    if (ban.ExpirationTime.HasValue)
+                                        banReason = tempTemplate;
+                                    else
+                                        banReason = permTemplate;
 
-                            if (client.Server.Player.UserAccount != null)
-                                banReason = banReason.Replace("<account>", client.Server.Player.UserAccount.Username);
+                                    banReason = banReason.Replace("<reason>", tmp);
 
+                                    if (ban.ExpirationTime.HasValue)
+                                        banReason = banReason.Replace("<time>", HumanizeTimeSpan(ban.ExpirationTime.Value - DateTime.Now));
+
+                                    if (client.Server.Player.UserAccount != null)
+                                        banReason = banReason.Replace("<account>", client.Server.Player.UserAccount.Username);
+
+                                }
+
+                                crp.Success = false;
+                                crp.RejectionReason = banReason;
+
+                                EssentialCommands.Logger.Info("Banned player {0} ({1}) tried to join!", client.Server.Player.Name, client.Server.Player.UserAccount.Username);
+                            }
                         }
 
-                        crp.Success = false;
-                        crp.RejectionReason = banReason;
-
-                        EssentialCommands.Logger.Info("Banned player {0} ({1}) tried to join!", client.Server.Player.Name, client.Server.Player.UserAccount.Username);
                     }
                 }
-
             }
 
         }
@@ -304,7 +398,7 @@ namespace EssentialCommandsPlugin.Commands
             if (ts.Hours > 0)
             {
                 sb.Append(ts.Hours + " hours ");
-                
+
                 ts = ts.Subtract(TimeSpan.FromHours(ts.Hours));
             }
 
