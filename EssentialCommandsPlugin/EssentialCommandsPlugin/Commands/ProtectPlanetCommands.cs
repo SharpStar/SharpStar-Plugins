@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EssentialCommandsPlugin.Db;
 using EssentialCommandsPlugin.DbModels;
 using EssentialCommandsPlugin.Extensions;
+using EssentialCommandsPlugin.Helpers;
 using NHibernate.Linq;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
@@ -22,11 +23,11 @@ namespace EssentialCommandsPlugin.Commands
     public class ProtectPlanetCommands
     {
 
-        private readonly Dictionary<ProtectedPlanet, List<Builder>> _planets;
+        private readonly Dictionary<Tuple<WorldCoordinate, int>, List<Builder>> _planets;
 
         public ProtectPlanetCommands()
         {
-            _planets = new Dictionary<ProtectedPlanet, List<Builder>>();
+            _planets = new Dictionary<Tuple<WorldCoordinate, int>, List<Builder>>();
             RefreshProtectedPlanets();
         }
 
@@ -103,8 +104,8 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", "Planet now protected!");
 
-                    if (_planets.All(p => p.Key.ID != planet.ID))
-                        _planets.Add(planet, new List<Builder>());
+                    if (_planets.All(p => p.Key.Item1 == coords))
+                        _planets.Add(Tuple.Create(coords, planet.ID), new List<Builder>());
 
                 }
             }
@@ -148,7 +149,7 @@ namespace EssentialCommandsPlugin.Commands
                         return;
                     }
 
-                    var pl = _planets.SingleOrDefault(p => p.Key.ID == planet.ID);
+                    var pl = _planets.SingleOrDefault(p => p.Key.Item1 == client.Server.Player.Coordinates);
 
                     _planets.Remove(pl.Key);
 
@@ -231,7 +232,7 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", String.Format("User {0} can now build on this planet", user.Username));
 
-                    var x = _planets.FirstOrDefault(p => p.Key.ID == planet.ID);
+                    var x = _planets.FirstOrDefault(p => p.Key.Item1 == client.Server.Player.Coordinates);
 
                     if (x.Value != null)
                     {
@@ -311,7 +312,7 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", String.Format("User {0} can no longer build on this planet", user.Username));
 
-                    var x = _planets.FirstOrDefault(p => p.Key.Equals(planet));
+                    var x = _planets.FirstOrDefault(p => p.Key.Item2 == planet.ID);
 
                     if (x.Value != null)
                     {
@@ -342,14 +343,14 @@ namespace EssentialCommandsPlugin.Commands
                     if (client.Server.Player.UserAccount.IsAdmin) //all admins are allowed to build
                         return;
 
-                    var planets = _planets.SingleOrDefault(x => DbHelper.IsEqual(client.Server.Player.Coordinates)(x.Key));
+                    var planets = _planets.SingleOrDefault(x => x.Key.Item1 == client.Server.Player.Coordinates);
 
                     if (planets.Value == null)
                         return;
 
                     Builder builder = planets.Value.SingleOrDefault(w => w.UserId == client.Server.Player.UserAccount.Id && w.Allowed);
 
-                    if (builder == null && planets.Key.OwnerId != client.Server.Player.UserAccount.Id)
+                    if (builder == null && planets.Key.Item2 != client.Server.Player.UserAccount.Id)
                     {
 
                         if (p == KnownPacket.EntityCreate)
@@ -438,7 +439,7 @@ namespace EssentialCommandsPlugin.Commands
                 else
                 {
 
-                    var planets = _planets.SingleOrDefault(x => DbHelper.IsEqual(client.Server.Player.Coordinates)(x.Key));
+                    var planets = _planets.SingleOrDefault(x => x.Key.Item1 == client.Server.Player.Coordinates);
 
                     if (planets.Value != null)
                     {
@@ -542,7 +543,7 @@ namespace EssentialCommandsPlugin.Commands
                 {
                     var builders = planet.Builders.ToList();
 
-                    _planets.Add(planet, builders);
+                    _planets.Add(Tuple.Create(planet.ToWorldCoordinate(), planet.ID), builders);
 
                 }
             }

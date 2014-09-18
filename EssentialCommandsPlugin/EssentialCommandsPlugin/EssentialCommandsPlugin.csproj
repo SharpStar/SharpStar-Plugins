@@ -119,7 +119,8 @@
     <Compile Include="Commands\MakeRemoveAdminCommand.cs" />
     <Compile Include="EssentialCommandsUserCommand.cs" />
     <Compile Include="EssentialCommandsBanUUID.cs" />
-    <Compile Include="Extensions\DbHelper.cs" />
+    <Compile Include="Extensions\DbExtensions.cs" />
+    <Compile Include="Helpers\DbHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
