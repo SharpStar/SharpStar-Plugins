@@ -521,6 +521,8 @@ namespace ServerManagementPlugin
 
                     if (!killServerProc.WaitForExit((int)TimeSpan.FromSeconds(5).TotalMilliseconds))
                     {
+                        Logger.Error("Error shutting down the server gracefully. Process has been killed.");
+
                         killServerProc.Kill();
                         serverProc.Kill();
                     }

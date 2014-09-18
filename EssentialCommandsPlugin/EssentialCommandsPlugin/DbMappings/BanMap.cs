@@ -17,7 +17,7 @@ namespace EssentialCommandsPlugin.DbMappings
             Map(m => m.BanReason);
             Map(m => m.ExpirationTime).Nullable();
             Map(m => m.UserAccountId).Nullable();
-            HasMany(m => m.BanUUIDs).Cascade.All().Inverse();
+            HasMany(m => m.BanUUIDs).Cascade.AllDeleteOrphan().Inverse();
         }
     }
 }

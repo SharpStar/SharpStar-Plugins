@@ -136,23 +136,21 @@ namespace EssentialCommandsPlugin.Commands
 
                     if (planet == null)
                     {
-
                         client.SendChatMessage("Server", "Planet is not protected!");
 
                         return;
-
                     }
 
                     if (planet.OwnerId != client.Server.Player.UserAccount.Id && !EssentialCommands.IsAdmin(client))
                     {
-
                         client.SendChatMessage("Server", "You do not own this planet!");
 
                         return;
-
                     }
 
-                    _planets.Remove(planet);
+                    var pl = _planets.SingleOrDefault(p => p.Key.ID == planet.ID);
+
+                    _planets.Remove(pl.Key);
 
                     session.Delete(planet);
 
@@ -233,8 +231,12 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", String.Format("User {0} can now build on this planet", user.Username));
 
-                    var x = _planets.First(p => p.Key.Equals(planet));
-                    x.Value.Add(builder);
+                    var x = _planets.FirstOrDefault(p => p.Key.ID == planet.ID);
+
+                    if (x.Value != null)
+                    {
+                        x.Value.Add(builder);
+                    }
 
                     transaction.Commit();
                 }
@@ -309,9 +311,12 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", String.Format("User {0} can no longer build on this planet", user.Username));
 
-                    var x = _planets.First(p => p.Key.Equals(planet));
+                    var x = _planets.FirstOrDefault(p => p.Key.Equals(planet));
 
-                    x.Value.RemoveAll(p => p.UserId == builder.UserId);
+                    if (x.Value != null)
+                    {
+                        x.Value.RemoveAll(p => p.UserId == builder.UserId);
+                    }
 
                     transaction.Commit();
                 }

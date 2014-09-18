@@ -16,8 +16,10 @@ namespace EssentialCommandsPlugin.Extensions
 
         public static Func<ProtectedPlanet, bool> IsEqual(WorldCoordinate coordinates)
         {
-            return _isEqualExpr ?? ((Expression<Func<ProtectedPlanet, bool>>)(planet => planet.Sector.Equals(coordinates.Sector) && planet.X == coordinates.X && planet.Y == coordinates.Y 
-                && planet.Z == coordinates.Z && planet.Satellite == coordinates.Satellite && planet.Planet.Equals(coordinates.Planet))).Compile();
+            _isEqualExpr = _isEqualExpr ?? ((Expression<Func<ProtectedPlanet, bool>>)(planet => planet.Sector.Equals(coordinates.Sector) && planet.X == coordinates.X && planet.Y == coordinates.Y 
+                && planet.Z == coordinates.Z && planet.Satellite == coordinates.Satellite && planet.Planet == coordinates.Planet)).Compile();
+
+            return _isEqualExpr;
         }
 
     }

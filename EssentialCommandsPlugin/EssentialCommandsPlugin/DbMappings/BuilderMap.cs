@@ -14,7 +14,7 @@ namespace EssentialCommandsPlugin.DbMappings
         {
             Id(m => m.Id);
             Map(m => m.UserId).Not.Nullable();
-            References(m => m.ProtectedPlanet).LazyLoad().Not.Nullable();
+            References(m => m.ProtectedPlanet).LazyLoad();
             Map(m => m.Allowed);
         }
     }
