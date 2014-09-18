@@ -15,7 +15,7 @@ using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 using SQLite;
 
-[assembly: Addin("EssentialCommands", Version = "1.0.6.4")]
+[assembly: Addin("EssentialCommands", Version = "1.0.6.5")]
 [assembly: AddinDescription("A command plugin that is essential")]
 [assembly: AddinProperty("sharpstar", "0.2.4.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]

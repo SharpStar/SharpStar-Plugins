@@ -195,52 +195,6 @@ namespace EssentialCommandsPlugin.DbModels
         {
             Builders = new List<Builder>();
         }
-
-        public static bool operator ==(ProtectedPlanet planet, WorldCoordinate coordinates)
-        {
-            if (ReferenceEquals(planet, null) || ReferenceEquals(coordinates, null))
-                return false;
-
-            return planet.Sector.Equals(coordinates.Sector) && planet.X == coordinates.X && planet.Y == coordinates.Y && planet.Z == coordinates.Z &&
-                planet.Satellite == coordinates.Satellite && planet.Planet.Equals(coordinates.Planet);
-        }
-
-        public static bool operator !=(ProtectedPlanet planet, WorldCoordinate coordinates)
-        {
-            return !(planet == coordinates);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-                return false;
-
-            if (!(obj is ProtectedPlanet))
-                return false;
-
-            return Equals((ProtectedPlanet)obj);
-        }
-
-        protected bool Equals(ProtectedPlanet other)
-        {
-            return ID == other.ID && OwnerId == other.OwnerId && string.Equals(Sector, other.Sector) && X == other.X && Y == other.Y && Z == other.Z && Planet == other.Planet && Satellite == other.Satellite && Equals(Builders, other.Builders);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hashCode = ID;
-                hashCode = (hashCode * 397) ^ OwnerId;
-                hashCode = (hashCode * 397) ^ (Sector != null ? Sector.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ X;
-                hashCode = (hashCode * 397) ^ Y;
-                hashCode = (hashCode * 397) ^ Z;
-                hashCode = (hashCode * 397) ^ Planet;
-                hashCode = (hashCode * 397) ^ Satellite;
-                return hashCode;
-            }
-        }
     }
 
     public class Builder

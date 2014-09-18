@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EssentialCommandsPlugin.Db;
 using EssentialCommandsPlugin.DbModels;
+using EssentialCommandsPlugin.Extensions;
 using NHibernate.Linq;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
@@ -50,7 +51,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    ProtectedPlanet planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
+                    ProtectedPlanet planet = session.Query<ProtectedPlanet>().SingleOrDefault(DbHelper.IsEqual(client.Server.Player.Coordinates));
 
                     if (planet != null)
                     {
@@ -131,7 +132,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
+                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(DbHelper.IsEqual(client.Server.Player.Coordinates));
 
                     if (planet == null)
                     {
@@ -197,7 +198,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
+                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(DbHelper.IsEqual(client.Server.Player.Coordinates));
 
                     if (planet == null)
                     {
@@ -279,7 +280,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(p => p == client.Server.Player.Coordinates);
+                    var planet = session.Query<ProtectedPlanet>().SingleOrDefault(DbHelper.IsEqual(client.Server.Player.Coordinates));
 
                     if (planet == null)
                     {
@@ -336,7 +337,7 @@ namespace EssentialCommandsPlugin.Commands
                     if (client.Server.Player.UserAccount.IsAdmin) //all admins are allowed to build
                         return;
 
-                    var planets = _planets.SingleOrDefault(w => w.Key == client.Server.Player.Coordinates);
+                    var planets = _planets.SingleOrDefault(x => DbHelper.IsEqual(client.Server.Player.Coordinates)(x.Key));
 
                     if (planets.Value == null)
                         return;
@@ -432,7 +433,7 @@ namespace EssentialCommandsPlugin.Commands
                 else
                 {
 
-                    var planets = _planets.SingleOrDefault(w => w.Key == client.Server.Player.Coordinates);
+                    var planets = _planets.SingleOrDefault(x => DbHelper.IsEqual(client.Server.Player.Coordinates)(x.Key));
 
                     if (planets.Value != null)
                     {
