@@ -14,7 +14,7 @@ namespace EssentialCommandsPlugin.DbMappings
         {
             Id(m => m.Id);
             Map(m => m.UserAccountId);
-            References(m => m.Ship).LazyLoad();
+            References(m => m.Ship).LazyLoad().Column("ShipId");
             Map(m => m.HasAccess);
         }
     }

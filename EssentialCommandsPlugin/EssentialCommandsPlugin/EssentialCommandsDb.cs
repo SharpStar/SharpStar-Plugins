@@ -7,7 +7,7 @@ using SQLite;
 
 namespace EssentialCommandsPlugin
 {
-    public class EssentialCommandsDb : ISharpStarDb
+    public class EssentialCommandsDb
     {
 
         public string DatabaseName { get; private set; }

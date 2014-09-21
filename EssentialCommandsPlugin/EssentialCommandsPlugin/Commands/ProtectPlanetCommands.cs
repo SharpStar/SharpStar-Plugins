@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using EssentialCommandsPlugin.Db;
 using EssentialCommandsPlugin.DbModels;
 using EssentialCommandsPlugin.Extensions;
 using EssentialCommandsPlugin.Helpers;
@@ -61,15 +59,15 @@ namespace EssentialCommandsPlugin.Commands
                         return;
                     }
 
-                    if (client.Server.Player.UserAccount.GroupId.HasValue)
+                    if (client.Server.Player.UserAccount.Group != null)
                     {
-                        Group group = session.Query<Group>().SingleOrDefault(p => p.GroupId == client.Server.Player.UserAccount.GroupId.Value);
+                        Group group = session.Query<Group>().SingleOrDefault(p => p.GroupId == client.Server.Player.UserAccount.Group.Id);
 
                         if (group == null)
                         {
                             group = new Group
                             {
-                                GroupId = client.Server.Player.UserAccount.GroupId.Value
+                                GroupId = client.Server.Player.UserAccount.Group.Id
                             };
 
                             session.Save(group);
@@ -104,9 +102,8 @@ namespace EssentialCommandsPlugin.Commands
 
                     client.SendChatMessage("Server", "Planet now protected!");
 
-                    if (_planets.All(p => p.Key.Item1 == coords))
+                    if (_planets.All(p => p.Key.Item1 != coords))
                         _planets.Add(Tuple.Create(coords, planet.ID), new List<Builder>());
-
                 }
             }
 

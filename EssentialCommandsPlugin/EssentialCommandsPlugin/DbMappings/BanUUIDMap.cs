@@ -13,7 +13,7 @@ namespace EssentialCommandsPlugin.DbMappings
         public BanUUIDMap()
         {
             Id(m => m.Id);
-            References(m => m.Ban).LazyLoad();
+            References(m => m.Ban).LazyLoad().Column("BanId");
             Map(m => m.PlayerName);
             Map(m => m.UUID);
         }

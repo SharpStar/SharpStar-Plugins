@@ -184,7 +184,7 @@ namespace EssentialCommandsPlugin.Commands
         }
 
         [PacketEvent(KnownPacket.WarpCommand)]
-        public async Task WarpCommandRecv(IPacket packet, SharpStarClient client)
+        public void WarpCommandRecv(IPacket packet, SharpStarClient client)
         {
 
             WarpCommandPacket wcp = (WarpCommandPacket)packet;

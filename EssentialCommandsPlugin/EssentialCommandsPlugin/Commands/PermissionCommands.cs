@@ -87,11 +87,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length < 2)
             {
-
                 client.SendChatMessage("Server", "Syntax: /addperm <permission> <username>");
 
                 return;
-
             }
 
             string perm = args[0];
@@ -101,11 +99,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (user == null)
             {
-
                 client.SendChatMessage("Server", "The user given does not exist!");
 
                 return;
-
             }
 
             SharpStarMain.Instance.Database.AddPlayerPermission(user.Id, perm, true);
@@ -122,11 +118,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length < 2)
             {
-
                 client.SendChatMessage("Server", "Syntax: /removeperm <permission> <username>");
 
                 return;
-
             }
 
             string perm = args[0];
@@ -136,11 +130,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (user == null)
             {
-
                 client.SendChatMessage("Server", "The user given does not exist!");
 
                 return;
-
             }
 
             SharpStarMain.Instance.Database.DeletePlayerPermission(user.Id, perm);
@@ -159,11 +151,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length == 0)
             {
-
                 client.SendChatMessage("Server", "Syntax: /creategroup <group name> <default>");
 
                 return;
-
             }
 
             bool defaultGroup = args.Length == 2 && args[1].Equals("true", StringComparison.OrdinalIgnoreCase);
@@ -191,22 +181,18 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length < 2)
             {
-
                 client.SendChatMessage("Server", "Syntax: /setgroupprefix <group name> <prefix>");
 
                 return;
-
             }
 
             SharpStarGroup group = SharpStarMain.Instance.Database.GetGroup(args[0]);
 
             if (group == null)
             {
-
                 client.SendChatMessage("Server", "Group does not exist!");
 
                 return;
-
             }
 
             using (var session = EssentialsDb.CreateSession())
@@ -253,22 +239,18 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length == 0)
             {
-
                 client.SendChatMessage("Server", "Syntax: /deletegroup <group name>");
 
                 return;
-
             }
 
             SharpStarGroup group = SharpStarMain.Instance.Database.GetGroup(args[0]);
 
             if (group == null)
             {
-
                 client.SendChatMessage("Server", "Group does not exist!");
 
                 return;
-
             }
 
             bool added = SharpStarMain.Instance.Database.DeleteGroup(group.Id);
@@ -316,7 +298,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setgroupcmdlimit")]
         [CommandPermission("permissions")]
-        public async Task SetGroupCommandLimit(SharpStarClient client, string[] args)
+        public void SetGroupCommandLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setgroupcmdlimit"))
@@ -388,7 +370,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("delgroupcmdlimit")]
         [CommandPermission("permissions")]
-        public async Task RemoveGroupCommandLimit(SharpStarClient client, string[] args)
+        public void RemoveGroupCommandLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "delgroupcmdlimit"))
@@ -454,11 +436,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length < 2)
             {
-
                 client.SendChatMessage("Server", "Syntax: /removegroupperm <group name> <permission>");
 
                 return;
-
             }
 
             bool exists = SharpStarMain.Instance.Database.RemoveGroupPermission(args[0], args[1]);
@@ -476,7 +456,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setplanetlimit")]
         [CommandPermission("permissions")]
-        public async Task SetPlanetLimit(SharpStarClient client, string[] args)
+        public void SetPlanetLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
@@ -484,22 +464,18 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length < 2)
             {
-
                 client.SendChatMessage("Server", "Syntax: /setplanetlimit <group name> <limit>");
 
                 return;
-
             }
 
             var group = SharpStarMain.Instance.Database.GetGroup(args[0]);
 
             if (group == null)
             {
-
                 client.SendChatMessage("Server", "Group does not exist!");
 
                 return;
-
             }
 
             int limit;
@@ -536,7 +512,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("delplanetlimit")]
         [CommandPermission("permissions")]
-        public async Task RemovePlanetLimit(SharpStarClient client, string[] args)
+        public void RemovePlanetLimit(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setplanetlimit"))
@@ -615,7 +591,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("setusergroup", "Set a user's group")]
         [CommandPermission("permissions")]
-        public async Task SetUserGroup(SharpStarClient client, string[] args)
+        public void SetUserGroup(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "setusergroup"))

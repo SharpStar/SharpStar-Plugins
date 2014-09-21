@@ -14,7 +14,7 @@ namespace EssentialCommandsPlugin.DbMappings
         {
             Id(m => m.Id);
             Map(m => m.UserId).Not.Nullable();
-            References(m => m.Command).LazyLoad();
+            References(m => m.Command).LazyLoad().Column("CommandId");
             Map(m => m.TimesUsed);
         }
     }

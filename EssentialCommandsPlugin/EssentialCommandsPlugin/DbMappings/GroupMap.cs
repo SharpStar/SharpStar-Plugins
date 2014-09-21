@@ -16,7 +16,7 @@ namespace EssentialCommandsPlugin.DbMappings
             Map(m => m.GroupId).Not.Nullable();
             Map(m => m.Prefix);
             Map(m => m.ProtectedPlanetLimit).Nullable();
-            HasMany(m => m.Commands).LazyLoad().Cascade.All();
+            HasMany(m => m.Commands).LazyLoad().Cascade.All().KeyColumn("GroupId").Inverse();
         }
     }
 }

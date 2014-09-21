@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using SharpStar.Lib;
 using SharpStar.Lib.Attributes;
 using SharpStar.Lib.Plugins;
@@ -14,7 +15,7 @@ namespace EssentialCommandsPlugin.Commands
 
         [Command("kick", "Kick a player")]
         [CommandPermission("kick")]
-        public void KickPlayer(SharpStarClient client, string[] args)
+        public async Task KickPlayer(SharpStarClient client, string[] args)
         {
 
             if (!EssentialCommands.CanUserAccess(client, "kick"))
@@ -31,7 +32,7 @@ namespace EssentialCommandsPlugin.Commands
                 return;
             }
 
-            EssentialCommands.KickBanPlayer(client.Server, players);
+            await EssentialCommands.KickBanPlayer(client.Server, players);
 
         }
 

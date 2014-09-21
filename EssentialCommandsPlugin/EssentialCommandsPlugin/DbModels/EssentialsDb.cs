@@ -48,8 +48,10 @@ namespace EssentialCommandsPlugin.DbModels
                 config = config.Database(SQLiteConfiguration.Standard.UsingFile(DatabaseFile));
             }
 
+            Assembly thisAssm = Assembly.GetCallingAssembly();
+
             _config = config
-              .Mappings(p => p.FluentMappings.AddFromAssemblyOf<BanMap>())
+              .Mappings(p => p.FluentMappings.AddFromAssembly(thisAssm))
               .ExposeConfiguration(p => new SchemaUpdate(p).Execute(false, true)).BuildConfiguration();
 
             MigrateToLatest();
@@ -72,7 +74,7 @@ namespace EssentialCommandsPlugin.DbModels
         public static void MigrateToLatest()
         {
             var announcer = new TextWriterAnnouncer(s => EssentialCommands.Logger.Debug(s));
-            var assembly = Assembly.GetExecutingAssembly();
+            var assembly = Assembly.GetCallingAssembly();
 
             var migrationContext = new RunnerContext(announcer)
             {
@@ -237,6 +239,8 @@ namespace EssentialCommandsPlugin.DbModels
         public virtual string CommandName { get; set; }
 
         public virtual int? CommandLimit { get; set; }
+
+        public virtual IList<UserCommand> UserCommands { get; set; }
     }
 
     public class UserCommand

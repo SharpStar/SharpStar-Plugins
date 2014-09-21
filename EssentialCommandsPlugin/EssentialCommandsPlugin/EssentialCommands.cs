@@ -15,15 +15,10 @@ using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 using SQLite;
 
-[assembly: Addin("EssentialCommands", Version = "1.0.6.8")]
+[assembly: Addin("EssentialCommands", Version = "1.0.7.0")]
 [assembly: AddinDescription("A command plugin that is essential")]
-[assembly: AddinProperty("sharpstar", "0.2.4.1")]
+[assembly: AddinProperty("sharpstar", "0.2.4.2")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
-[assembly: ImportAddinAssembly("NHibernate.dll")]
-[assembly: ImportAddinAssembly("FluentMigrator.dll")]
-[assembly: ImportAddinAssembly("FluentMigrator.Runner.dll")]
-[assembly: ImportAddinAssembly("Iesi.Collections.dll")]
-[assembly: ImportAddinAssembly("FluentNHibernate.dll")]
 namespace EssentialCommandsPlugin
 {
     [Extension]
@@ -274,7 +269,7 @@ namespace EssentialCommandsPlugin
                         conn.Close();
                         conn.Dispose();
 
-                        File.Move(DatabaseName, DatabaseName + ".old");
+                        File.Move(DatabaseName, DatabaseName + "-" + Guid.NewGuid() + ".old");
                     }
                 }
             }
@@ -282,10 +277,8 @@ namespace EssentialCommandsPlugin
 
         public override Task<bool> OnChatCommandReceived(SharpStarClient client, string command, string[] args)
         {
-
             if (client.Server.Player != null && client.Server.Player.UserGroupId.HasValue && client.Server.Player.UserAccount != null)
             {
-
                 using (var session = EssentialsDb.CreateSession())
                 {
                     using (var transaction = session.BeginTransaction())
@@ -313,9 +306,7 @@ namespace EssentialCommandsPlugin
                             transaction.Commit();
                         }
                     }
-
                 }
-
             }
 
             return base.OnChatCommandReceived(client, command, args);

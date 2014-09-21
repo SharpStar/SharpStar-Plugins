@@ -15,7 +15,7 @@ namespace EssentialCommandsPlugin.DbMappings
             Id(m => m.Id);
             Map(m => m.OwnerUserAccountId).Not.Nullable();
             Map(m => m.Public);
-            HasMany(m => m.ShipUsers).LazyLoad().Cascade.AllDeleteOrphan();
+            HasMany(m => m.ShipUsers).LazyLoad().Cascade.AllDeleteOrphan().KeyColumn("ShipId").Inverse();
         }
     }
 }

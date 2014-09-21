@@ -14,9 +14,10 @@ namespace EssentialCommandsPlugin.DbMappings
         {
             Id(m => m.Id);
             Map(m => m.GroupId).Nullable();
-            References(m => m.Group).LazyLoad().Nullable();
+            References(m => m.Group).LazyLoad().Nullable().Column("GroupId");
             Map(m => m.CommandName);
             Map(m => m.CommandLimit).Nullable();
+            HasMany(m => m.UserCommands).LazyLoad().Cascade.AllDeleteOrphan().KeyColumn("CommandId").Inverse();
         }
     }
 }

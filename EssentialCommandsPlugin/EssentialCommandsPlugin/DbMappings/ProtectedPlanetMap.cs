@@ -20,7 +20,7 @@ namespace EssentialCommandsPlugin.DbMappings
             Map(m => m.Z);
             Map(m => m.Planet);
             Map(m => m.Satellite);
-            HasMany(m => m.Builders).LazyLoad().Cascade.AllDeleteOrphan();
+            HasMany(m => m.Builders).LazyLoad().Cascade.AllDeleteOrphan().Inverse().KeyColumn("ProtectedPlanetId");
         }
     }
 }
