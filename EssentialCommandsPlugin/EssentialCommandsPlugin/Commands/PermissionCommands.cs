@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EssentialCommandsPlugin.Db;
 using EssentialCommandsPlugin.DbModels;
 using NHibernate.Linq;
 using SharpStar.Lib;
@@ -41,14 +38,13 @@ namespace EssentialCommandsPlugin.Commands
         [PacketEvent(KnownPacket.ChatReceived)]
         public void OnChatReceived(IPacket packet, SharpStarClient client)
         {
-
             ChatReceivedPacket csp = (ChatReceivedPacket)packet;
 
             var plr = SharpStarMain.Instance.Server.Clients.FirstOrDefault(p => p.Player != null && p.Player.ClientId == csp.ClientId);
 
-            if (plr != null && plr.Player.UserGroupId.HasValue)
+            if (plr != null && plr.Player.UserAccount != null && plr.Player.UserAccount.Group != null)
             {
-                Group group = Groups.SingleOrDefault(p => p.GroupId == plr.Player.UserGroupId);
+                Group group = Groups.SingleOrDefault(p => p.GroupId == plr.Player.UserAccount.Group.Id);
 
                 if (group != null && !string.IsNullOrEmpty(group.Prefix))
                     csp.Name = String.Format("[{0}] {1}", group.Prefix, csp.Name);
@@ -58,7 +54,6 @@ namespace EssentialCommandsPlugin.Commands
         [PacketEvent(KnownPacket.ConnectionResponse)]
         public void OnConnect(IPacket packet, SharpStarClient client)
         {
-
             if (client.Server.Player == null)
                 return;
 
@@ -209,7 +204,6 @@ namespace EssentialCommandsPlugin.Commands
                         };
 
                         session.Save(newGroup);
-
                     }
                     else
                     {
@@ -225,8 +219,6 @@ namespace EssentialCommandsPlugin.Commands
             RefreshGroups();
 
             client.SendChatMessage("Server", "Group prefix set!");
-
-
         }
 
         [Command("deletegroup", "Delete a permission group")]
@@ -482,11 +474,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (!int.TryParse(args[1], out limit))
             {
-
                 client.SendChatMessage("Server", "Invalid limit!");
 
                 return;
-
             }
 
             using (var session = EssentialsDb.CreateSession())
@@ -599,11 +589,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length < 2)
             {
-
                 client.SendChatMessage("Server", "Syntax: /setusergroup <username> <group name>");
 
                 return;
-
             }
 
             SharpStarGroup group = SharpStarMain.Instance.Database.GetGroup(args[1]);
@@ -621,14 +609,19 @@ namespace EssentialCommandsPlugin.Commands
 
             if (user == null)
             {
-
                 client.SendChatMessage("Server", "User does not exist!");
 
                 return;
-
             }
 
             SharpStarMain.Instance.Database.ChangeUserGroup(user.Id, group.Id);
+
+            var targetClient = SharpStarMain.Instance.Server.Clients.SingleOrDefault(p => p.Player != null && p.Player.UserAccount != null && p.Player.UserAccount.Id == user.Id);
+
+            if (targetClient != null)
+            {
+                targetClient.Player.UserAccount = SharpStarMain.Instance.Database.GetUser(user.Id);
+            }
 
             using (var session = EssentialsDb.CreateSession())
             {

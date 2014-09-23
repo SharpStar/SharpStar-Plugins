@@ -33,17 +33,14 @@ namespace EssentialCommandsPlugin.Commands
         [CommandPermission("planetprotect")]
         public void Protect(SharpStarClient client, string[] args)
         {
-
             if (!EssentialCommands.CanUserAccess(client, "protect"))
                 return;
 
             if (client.Server.Player.OnShip || client.Server.Player.Coordinates == null)
             {
-
                 client.SendChatMessage("Server", "You are not on a planet!");
 
                 return;
-
             }
 
             using (var session = EssentialsDb.CreateSession())
@@ -106,24 +103,20 @@ namespace EssentialCommandsPlugin.Commands
                         _planets.Add(Tuple.Create(coords, planet.ID), new List<Builder>());
                 }
             }
-
         }
 
         [Command("unprotect", "Remove a planet's protection")]
         [CommandPermission("planetprotect")]
         public void Unprotect(SharpStarClient client, string[] args)
         {
-
             if (!EssentialCommands.CanUserAccess(client, "unprotect"))
                 return;
 
             if (client.Server.Player.OnShip || client.Server.Player.Coordinates == null)
             {
-
                 client.SendChatMessage("Server", "You are not on a planet!");
 
                 return;
-
             }
 
             using (var session = EssentialsDb.CreateSession())
@@ -157,7 +150,6 @@ namespace EssentialCommandsPlugin.Commands
                     transaction.Commit();
                 }
             }
-
         }
 
         [Command("addbuilder", "Allows a user to build on the planet")]

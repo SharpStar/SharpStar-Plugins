@@ -15,7 +15,7 @@ using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 using SQLite;
 
-[assembly: Addin("EssentialCommands", Version = "1.0.7.0")]
+[assembly: Addin("EssentialCommands", Version = "1.0.7.1")]
 [assembly: AddinDescription("A command plugin that is essential")]
 [assembly: AddinProperty("sharpstar", "0.2.4.2")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -231,7 +231,7 @@ namespace EssentialCommandsPlugin
                             {
                                 Prefix = group.Prefix,
                                 ProtectedPlanetLimit = group.ProtectedPlanetLimit,
-                                GroupId = group.Id
+                                GroupId = group.GroupId
                             };
 
                             session.Save(newGroup);
@@ -277,13 +277,13 @@ namespace EssentialCommandsPlugin
 
         public override Task<bool> OnChatCommandReceived(SharpStarClient client, string command, string[] args)
         {
-            if (client.Server.Player != null && client.Server.Player.UserGroupId.HasValue && client.Server.Player.UserAccount != null)
+            if (client.Server.Player != null && client.Server.Player.UserAccount != null && client.Server.Player.UserAccount.Group != null)
             {
                 using (var session = EssentialsDb.CreateSession())
                 {
                     using (var transaction = session.BeginTransaction())
                     {
-                        Command cmd = session.Query<Command>().SingleOrDefault(p => p.GroupId == client.Server.Player.UserGroupId.Value);
+                        Command cmd = session.Query<Command>().SingleOrDefault(p => p.GroupId == client.Server.Player.UserAccount.Group.Id);
 
                         if (cmd != null)
                         {
@@ -314,12 +314,8 @@ namespace EssentialCommandsPlugin
 
         public static async Task KickBanPlayer(SharpStarServerClient kickBanner, List<SharpStarServerClient> players, bool ban = false, string banReason = "", DateTime? expireTime = null)
         {
-
-            for (int i = 0; i < players.Count; i++)
+            foreach (var plr in players)
             {
-
-                var plr = players[i];
-
                 if (!plr.ServerClient.Connected)
                     continue;
 
@@ -328,15 +324,16 @@ namespace EssentialCommandsPlugin
                 else
                     plr.PlayerClient.SendChatMessage("Server", "You have been banned. Goodbye.");
 
-                await Task.Factory.StartNew(() =>
+                SharpStarServerClient plr1 = plr;
+                await Task.Run(() =>
                 {
 
                     if (!ban)
                     {
-                        plr.ServerClient.ClientDisconnected += (sender, e) =>
+                        plr1.ServerClient.ClientDisconnected += (sender, e) =>
                         {
                             if (kickBanner.PlayerClient.Connected)
-                                kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been kicked!", plr.Player.Name));
+                                kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been kicked!", plr1.Player.Name));
 
                             Logger.Info("Player {0} has kicked by {1} ({2})", e.Client.Server.Player.Name, kickBanner.Player.Name, kickBanner.Player.UserAccount.Username);
                         };
@@ -346,8 +343,8 @@ namespace EssentialCommandsPlugin
 
                         int? acctId = null;
 
-                        if (plr.Player.UserAccount != null)
-                            acctId = plr.Player.UserAccount.Id;
+                        if (plr1.Player.UserAccount != null)
+                            acctId = plr1.Player.UserAccount.Id;
 
                         using (var session = EssentialsDb.CreateSession())
                         {
@@ -355,7 +352,7 @@ namespace EssentialCommandsPlugin
                             {
                                 Ban newBan = new Ban
                                 {
-                                    IPAddress = plr.PlayerClient.RemoteEndPoint.Address.ToString(),
+                                    IPAddress = plr1.PlayerClient.RemoteEndPoint.Address.ToString(),
                                     UserAccountId = acctId,
                                     BanReason = banReason,
                                     ExpirationTime = expireTime
@@ -366,18 +363,18 @@ namespace EssentialCommandsPlugin
                                 session.Save(new BanUUID
                                 {
                                     Ban = newBan,
-                                    PlayerName = plr.Player.Name,
-                                    UUID = plr.Player.UUID
+                                    PlayerName = plr1.Player.Name,
+                                    UUID = plr1.Player.UUID
                                 });
 
                                 transaction.Commit();
                             }
                         }
 
-                        plr.ServerClient.ClientDisconnected += (sender, e) =>
+                        plr1.ServerClient.ClientDisconnected += (sender, e) =>
                         {
                             if (kickBanner.PlayerClient.Connected)
-                                kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been banned!", plr.Player.Name));
+                                kickBanner.PlayerClient.SendChatMessage("Server", String.Format("Player {0} has been banned!", plr1.Player.Name));
 
                             Logger.Info("Player {0} has been banned by {1} ({2})", e.Client.Server.Player.Name, kickBanner.Player.Name, kickBanner.Player.UserAccount.Username);
 
@@ -386,14 +383,13 @@ namespace EssentialCommandsPlugin
 
                     Thread.Sleep(1000);
 
-                    if (plr.PlayerClient != null)
-                        plr.PlayerClient.ForceDisconnect();
+                    if (plr1.PlayerClient != null)
+                        plr1.PlayerClient.ForceDisconnect();
 
-                    if (plr.ServerClient != null)
-                        plr.ServerClient.ForceDisconnect();
+                    if (plr1.ServerClient != null)
+                        plr1.ServerClient.ForceDisconnect();
 
                 });
-
             }
         }
 

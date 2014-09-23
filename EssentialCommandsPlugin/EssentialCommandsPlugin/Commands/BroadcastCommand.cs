@@ -16,7 +16,6 @@ namespace EssentialCommandsPlugin.Commands
         [CommandPermission("broadcast")]
         public void Broadcast(SharpStarClient client, string[] args)
         {
-
             if (!EssentialCommands.CanUserAccess(client, "broadcast"))
                 return;
 
@@ -26,7 +25,6 @@ namespace EssentialCommandsPlugin.Commands
             {
                 cl.PlayerClient.SendChatMessage("Broadcast", message);
             }
-
         }
 
     }
