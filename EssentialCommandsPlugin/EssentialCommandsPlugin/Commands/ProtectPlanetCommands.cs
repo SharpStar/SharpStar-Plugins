@@ -241,11 +241,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length != 1)
             {
-
                 client.SendChatMessage("Server", "Syntax: /removebuilder <username>");
 
                 return;
-
             }
 
             if (!EssentialCommands.CanUserAccess(client, "removebuilder"))
@@ -263,7 +261,6 @@ namespace EssentialCommandsPlugin.Commands
             if (client.Server.Player.Coordinates == null || client.Server.Player.OnShip)
             {
                 client.SendChatMessage("Server", "You are not on a planet!");
-
 
                 return;
             }
@@ -292,7 +289,7 @@ namespace EssentialCommandsPlugin.Commands
 
                     if (builder == null)
                     {
-                        client.SendChatMessage("Server", "The user is not a builder");
+                        client.SendChatMessage("Server", "The user is not a builder on this planet!");
 
                         return;
                     }

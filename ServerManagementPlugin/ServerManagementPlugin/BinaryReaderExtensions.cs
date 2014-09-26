@@ -12,7 +12,6 @@ namespace ServerManagementPlugin
 
         public static string ReadStringEx(this BinaryReader reader)
         {
-
             StringBuilder sb = new StringBuilder();
 
             char character;
@@ -23,7 +22,6 @@ namespace ServerManagementPlugin
             }
 
             return sb.ToString();
-
         }
 
     }

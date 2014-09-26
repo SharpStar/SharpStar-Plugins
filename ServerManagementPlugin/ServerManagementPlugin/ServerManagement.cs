@@ -16,10 +16,11 @@ using ServerManagementPlugin.ConsoleCommands;
 using SharpStar.Lib;
 using SharpStar.Lib.Logging;
 using SharpStar.Lib.Mono;
+using SharpStar.Lib.Packets;
 using SharpStar.Lib.Plugins;
 using SharpStar.Lib.Server;
 
-[assembly: Addin("ServerManagement", Version = "1.0.9.9")]
+[assembly: Addin("ServerManagement", Version = "1.1.0.0")]
 [assembly: AddinDescription("A plugin to manage a Starbound server")]
 [assembly: AddinProperty("sharpstar", "0.2.3.1")]
 [assembly: AddinDependency("SharpStar.Lib", "1.0")]
@@ -48,6 +49,9 @@ namespace ServerManagementPlugin
         private ManagementEventWatcher processStopEvent;
 
         private static int pid;
+
+
+        private static readonly PacketReader _pReader = new PacketReader();
 
         public override void OnLoad()
         {
@@ -84,9 +88,9 @@ namespace ServerManagementPlugin
             {
                 connTimer = new Timer();
                 connTimer.Interval = TimeSpan.FromMinutes(Config.ConfigFile.ServerCheckInterval).TotalMilliseconds;
-                connTimer.Elapsed += (s, e) =>
+                connTimer.Elapsed += async (s, e) =>
                 {
-                    bool serverOnline = CheckServer() && CheckServerUDP();
+                    bool serverOnline = await CheckServer() && CheckServerUDP();
 
                     if (serverOnline)
                     {
@@ -202,35 +206,55 @@ namespace ServerManagementPlugin
             }
         }
 
-        private bool CheckServer()
+        private async Task<bool> CheckServer()
         {
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-            bool toReturn;
-            try
+            return await Task.Run(() =>
             {
-                string bind = SharpStarMain.Instance.Config.ConfigFile.StarboundBind;
+                TcpClient client = new TcpClient();
 
-                if (string.IsNullOrEmpty(bind))
-                    socket.Connect(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Config.ConfigFile.ServerPort);
-                else
-                    socket.Connect(bind, SharpStarMain.Instance.Config.ConfigFile.ServerPort);
+                bool toReturn;
+                try
+                {
+                    string bind = SharpStarMain.Instance.Config.ConfigFile.StarboundBind;
 
-                socket.Shutdown(SocketShutdown.Both);
+                    if (string.IsNullOrEmpty(bind))
+                        client.Connect(IPAddress.Parse("127.0.0.1"), SharpStarMain.Instance.Config.ConfigFile.ServerPort);
+                    else
+                        client.Connect(bind, SharpStarMain.Instance.Config.ConfigFile.ServerPort);
 
-                toReturn = true;
-            }
-            catch
-            {
-                toReturn = false;
-            }
-            finally
-            {
-                socket.Close();
-                socket.Dispose();
-            }
+                    var stream = client.GetStream();
 
-            return toReturn;
+                    byte[] buffer = new byte[1024];
+
+                    bool gotPacket = false;
+
+                    DateTime start = DateTime.Now;
+                    while (!gotPacket && (DateTime.Now - start) < TimeSpan.FromSeconds(5))
+                    {
+                        int read = stream.Read(buffer, 0, buffer.Length);
+
+                        _pReader.NetworkBuffer = new ArraySegment<byte>(buffer, 0, read);
+
+                        var packets = _pReader.UpdateBuffer(true).ToList();
+
+                        gotPacket = packets.Any();
+                    }
+
+                    client.Client.Shutdown(SocketShutdown.Both);
+
+                    toReturn = gotPacket;
+                }
+                catch
+                {
+                    toReturn = false;
+                }
+                finally
+                {
+                    client.Close();
+                }
+
+                return toReturn;
+            });
 
         }
 

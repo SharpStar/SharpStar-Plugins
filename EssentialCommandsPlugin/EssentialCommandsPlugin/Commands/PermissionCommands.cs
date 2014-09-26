@@ -194,13 +194,14 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == group.Id);
 
                     if (grp == null)
                     {
                         Group newGroup = new Group
                         {
-                            Prefix = args[1]
+                            Prefix = args[1],
+                            GroupId = group.Id
                         };
 
                         session.Save(newGroup);
@@ -325,7 +326,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    Group newGroup = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+                    Group newGroup = session.Query<Group>().SingleOrDefault(p => p.GroupId == group.Id);
 
                     if (newGroup != null)
                     {
@@ -392,7 +393,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == group.Id);
 
                     if (grp != null)
                     {
@@ -483,7 +484,7 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == group.Id);
 
                     if (grp != null)
                     {
@@ -532,16 +533,16 @@ namespace EssentialCommandsPlugin.Commands
             {
                 using (var transaction = session.BeginTransaction())
                 {
-                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == @group.Id);
+                    Group grp = session.Query<Group>().SingleOrDefault(p => p.GroupId == group.Id);
 
                     if (grp != null)
                     {
                         grp.ProtectedPlanetLimit = null;
 
                         session.SaveOrUpdate(grp);
-                    }
 
-                    transaction.Commit();
+                        transaction.Commit();
+                    }
                 }
             }
 
@@ -559,11 +560,9 @@ namespace EssentialCommandsPlugin.Commands
 
             if (args.Length == 0)
             {
-
                 client.SendChatMessage("Server", "Syntax: /setdefaultgroup <group name>");
 
                 return;
-
             }
 
             bool exists = SharpStarMain.Instance.Database.SetDefaultGroup(args[0]);
